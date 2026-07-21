@@ -30,8 +30,8 @@ class AppStrings {
 
   // Navigation
   static const String navHome = 'Home';
-  static const String navTask = 'Task';
-  static const String navLeave = 'Leave';
+  static const String navTask = 'Tasks';
+  static const String navLeave = 'Leaves';
   static const String navBoard = 'Board';
   static const String navProfile = 'Profile';
 
