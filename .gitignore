@@ -2,7 +2,7 @@
 #  .gitignore — standup monorepo (root-level concerns only)
 #  Subdirectory-specific rules live in:
 #    standup/.gitignore   ← ERPNext / Frappe Python app
-#    app/.gitignore       ← Flutter mobile app
+#    app/standup/.gitignore   ← Flutter mobile app
 # ═══════════════════════════════════════════════════════════════════════════
 
 # ─── Editors ────────────────────────────────────────────────────────────────
