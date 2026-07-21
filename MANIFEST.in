@@ -1,0 +1,30 @@
+# ─── MANIFEST.in ─────────────────────────────────────────────────────────────
+# Controls what goes into sdist (.tar.gz) builds.
+# The `/app` Flutter directory is explicitly excluded so it is never
+# packaged or published to PyPI / bench-internal installs.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Include essential root-level files
+include pyproject.toml
+include README.md
+include requirements.txt
+include LICENSE
+
+# Include all Frappe app assets
+recursive-include standup *.py *.json *.html *.js *.css *.txt *.md
+
+# ── Explicit Flutter exclusion (belt-and-suspenders) ────────────────────────
+# Even though setuptools.packages.find already excludes `app`, MANIFEST.in
+# exclusions prevent sdist from ever containing Flutter source.
+prune app
+prune .github
+prune dist
+prune build
+prune .git
+
+# Exclude Python cache and build artifacts everywhere
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.egg-info
+global-exclude .DS_Store
+global-exclude *.swp

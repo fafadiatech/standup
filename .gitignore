@@ -1,0 +1,25 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  .gitignore — standup monorepo (root-level concerns only)
+#  Subdirectory-specific rules live in:
+#    standup/.gitignore   ← ERPNext / Frappe Python app
+#    app/.gitignore       ← Flutter mobile app
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ─── Editors ────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*~
+
+# ─── macOS / OS ─────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# ─── Secrets ────────────────────────────────────────────────────────────────
+.env
+.env.*
+*.pem

@@ -1,0 +1,9 @@
+# Frappe runtime requirements
+# bench reads this file via `bench setup requirements`.
+# Pin versions only when a specific floor is required.
+frappe>=15.0.0
+
+# Add app-specific Python dependencies below.
+# Example:
+# requests>=2.31.0
+# pydantic>=2.0.0

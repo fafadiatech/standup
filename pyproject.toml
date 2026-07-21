@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "standup"
+version = "0.1.0"
+description = "Standup gives your workforce real-time access to ERPNext from the palm of their hand. Built on Flutter for maximum speed and smooth usability across iOS and Android, Standup eliminates operational lag, speeds up approvals, and drives organization-wide efficiency."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Fafadia Tech", email = "sidharth@fafadiatech.com" }]
+
+# Runtime dependencies declared here are installed by bench automatically.
+# Pin liberally in development; loosen for production compatibility.
+dependencies = [
+    "frappe>=15.0.0",
+]
+
+[project.urls]
+Homepage    = "https://github.com/fafadiatech/standup"
+Repository  = "https://github.com/fafadiatech/standup"
+
+# ─── Package Discovery ───────────────────────────────────────────────────────
+# Only the inner `standup` Python package is a distribution artifact.
+# The `/app` Flutter directory must NEVER be picked up by setuptools.
+[tool.setuptools.packages.find]
+where   = ["."]          # search from repo root
+include = ["standup*"]   # only the Frappe Python package and its sub-packages
+exclude = [
+    "app",
+    "app.*",
+    "*.egg-info",
+    "dist",
+    "build",
+]
+
+# ─── Package Data ────────────────────────────────────────────────────────────
+# Ship non-.py assets that Frappe expects (templates, JS, CSS, JSON doctypes).
+[tool.setuptools.package-data]
+standup = [
+    "**/*.json",
+    "**/*.html",
+    "**/*.js",
+    "**/*.css",
+    "**/*.txt",
+    "**/*.md",
+    "public/**/*",
+    "templates/**/*",
+    "www/**/*",
+]

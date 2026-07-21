@@ -1,0 +1,69 @@
+name: Frappe App — Tests
+
+on:
+  push:
+    paths:
+      - 'standup/**'
+      - 'requirements.txt'
+      - 'pyproject.toml'
+      - '.github/workflows/frappe-tests.yml'
+  pull_request:
+    paths:
+      - 'standup/**'
+      - 'requirements.txt'
+      - 'pyproject.toml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: test_standup
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install bench CLI
+        run: pip install frappe-bench
+
+      - name: Initialize bench
+        run: |
+          bench init --skip-redis-config-generation \
+                     --frappe-branch version-15 \
+                     frappe-bench
+          cd frappe-bench
+          bench new-site test.localhost \
+            --db-root-password root \
+            --admin-password admin \
+            --no-mariadb-socket
+
+      - name: Link & install app
+        run: |
+          cd frappe-bench
+          bench get-app standup $GITHUB_WORKSPACE
+          bench --site test.localhost install-app standup
+
+      - name: Run Frappe tests
+        run: |
+          cd frappe-bench
+          bench --site test.localhost run-tests --app standup
+
+      - name: Lint (ruff)
+        run: |
+          pip install ruff
+          ruff check standup/

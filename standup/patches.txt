@@ -1,0 +1,6 @@
+# Frappe patch execution order.
+# Add patch module paths here in chronological order.
+# Format: standup.patches.<patch_module_name>
+#
+# Example:
+# standup.patches.v1_0.initial_setup

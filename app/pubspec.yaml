@@ -1,0 +1,51 @@
+name: standup
+description: "Standup gives your workforce real-time access to ERPNext from the palm of their hand. Built on Flutter for maximum speed and smooth usability across iOS and Android, Standup eliminates operational lag, speeds up approvals, and drives organization-wide efficiency."
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+# ─── Dependencies ────────────────────────────────────────────────────────────
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP client with interceptors — used for all Frappe API calls
+  dio: ^5.4.3
+
+  # Cookie jar for Dio (persists Frappe session cookies if needed)
+  dio_cookie_manager: ^3.1.1
+  cookie_jar: ^4.0.8
+
+  # Encrypted on-device storage for api_key / api_secret
+  flutter_secure_storage: ^9.0.0
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # JSON serialisation
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.9.0
+
+  # Navigation
+  go_router: ^13.2.0
+
+  # Utilities
+  intl: ^0.19.0
+  logger: ^2.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.9
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+  mocktail: ^1.0.3
+
+flutter:
+  uses-material-design: true
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
