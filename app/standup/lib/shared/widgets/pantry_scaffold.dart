@@ -5,61 +5,41 @@ import '../../core/theme/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../providers/navigation_provider.dart';
 
-class AppScaffold extends ConsumerWidget {
+class PantryScaffold extends ConsumerWidget {
   final Widget child;
 
-  const AppScaffold({super.key, required this.child});
+  const PantryScaffold({super.key, required this.child});
 
   static const List<_NavItem> _navItems = [
     _NavItem(
-      label: AppStrings.navHome,
-      icon: Icons.home_outlined,
-      activeIcon: Icons.home,
-      route: AppStrings.routeHome,
-    ),
-    _NavItem(
-      label: AppStrings.navTask,
-      icon: Icons.list_alt_outlined,
-      activeIcon: Icons.list_alt,
-      route: AppStrings.routeTask,
-    ),
-    _NavItem(
-      label: AppStrings.navLeave,
-      icon: Icons.calendar_today_outlined,
-      activeIcon: Icons.calendar_today,
-      route: AppStrings.routeLeave,
-    ),
-    _NavItem(
-      label: AppStrings.navSnack,
-      icon: Icons.local_cafe_outlined,
-      activeIcon: Icons.local_cafe,
-      route: AppStrings.routeSnack,
-    ),
-    _NavItem(
-      label: AppStrings.navBoard,
-      icon: Icons.emoji_events_outlined,
-      activeIcon: Icons.emoji_events,
-      route: AppStrings.routeBoard,
+      label: AppStrings.navPantryOrders,
+      icon: Icons.receipt_long_outlined,
+      activeIcon: Icons.receipt_long,
+      route: AppStrings.routePantryDashboard,
     ),
     _NavItem(
       label: AppStrings.navProfile,
       icon: Icons.person_outline,
       activeIcon: Icons.person,
-      route: AppStrings.routeProfile,
+      route: AppStrings.routePantryProfile,
     ),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentIndex = ref.watch(navigationIndexProvider);
+    final location = GoRouterState.of(context).matchedLocation;
+    final routeIndex =
+        _navItems.indexWhere((item) => item.route == location);
+    final currentIndex = routeIndex >= 0
+        ? routeIndex
+        : ref.watch(pantryNavigationIndexProvider);
 
     return Scaffold(
       body: child,
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex:
-            currentIndex >= _navItems.length ? 0 : currentIndex,
+        currentIndex: currentIndex >= _navItems.length ? 0 : currentIndex,
         onTap: (index) {
-          ref.read(navigationIndexProvider.notifier).state = index;
+          ref.read(pantryNavigationIndexProvider.notifier).state = index;
           context.go(_navItems[index].route);
         },
         items: _navItems.map((item) {

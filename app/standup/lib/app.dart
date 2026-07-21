@@ -14,22 +14,46 @@ import 'features/leave/screens/leave_screen.dart';
 import 'features/leave/screens/apply_leave_screen.dart';
 import 'features/board/screens/board_screen.dart';
 import 'features/profile/screens/profile_screen.dart';
+import 'features/snack/screens/snack_screen.dart';
+import 'features/snack/screens/apply_snack_request_screen.dart';
+import 'features/snack/screens/pantry_dashboard_screen.dart';
+import 'features/snack/screens/pantry_profile_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final isLoggedIn = ref.watch(authProvider);
+  final authState = ref.watch(authProvider);
+  final isLoggedIn = authState.isLoggedIn;
+  final role = authState.user?.role.toLowerCase() ?? '';
+  final isPantry = role == 'pantry';
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: AppStrings.routeLogin,
     redirect: (context, state) {
       final onLoginPage = state.matchedLocation == AppStrings.routeLogin;
+      final onPantryPage = state.matchedLocation == AppStrings.routePantryDashboard ||
+          state.matchedLocation == AppStrings.routePantryProfile;
+      final onEmployeeRoute = state.matchedLocation == AppStrings.routeHome ||
+          state.matchedLocation == AppStrings.routeTask ||
+          state.matchedLocation == AppStrings.routeLeave ||
+          state.matchedLocation == AppStrings.routeBoard ||
+          state.matchedLocation == AppStrings.routeProfile ||
+          state.matchedLocation == AppStrings.routeSnack ||
+          state.matchedLocation == AppStrings.routeSnackApply;
 
       if (!isLoggedIn && !onLoginPage) {
         return AppStrings.routeLogin;
       }
       if (isLoggedIn && onLoginPage) {
+        return isPantry
+            ? AppStrings.routePantryDashboard
+            : AppStrings.routeHome;
+      }
+      if (isLoggedIn && isPantry && onEmployeeRoute) {
+        return AppStrings.routePantryDashboard;
+      }
+      if (isLoggedIn && !isPantry && onPantryPage) {
         return AppStrings.routeHome;
       }
       return null;
@@ -44,7 +68,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HomeScreen(),
       ),
       GoRoute(
-        path: '/task',
+        path: AppStrings.routeTask,
         builder: (context, state) => const TaskScreen(),
       ),
       GoRoute(
@@ -66,7 +90,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/leave',
+        path: AppStrings.routeLeave,
         builder: (context, state) => const LeaveScreen(),
       ),
       GoRoute(
@@ -74,12 +98,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ApplyLeaveScreen(),
       ),
       GoRoute(
-        path: '/board',
+        path: AppStrings.routeBoard,
         builder: (context, state) => const BoardScreen(),
       ),
       GoRoute(
-        path: '/profile',
+        path: AppStrings.routeProfile,
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: AppStrings.routeSnack,
+        builder: (context, state) => const SnackScreen(),
+      ),
+      GoRoute(
+        path: AppStrings.routeSnackApply,
+        builder: (context, state) => const ApplySnackRequestScreen(),
+      ),
+      GoRoute(
+        path: AppStrings.routePantryDashboard,
+        builder: (context, state) => const PantryDashboardScreen(),
+      ),
+      GoRoute(
+        path: AppStrings.routePantryProfile,
+        builder: (context, state) => const PantryProfileScreen(),
       ),
     ],
   );

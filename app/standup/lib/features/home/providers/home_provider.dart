@@ -5,9 +5,10 @@ import '../../../data/models/event_model.dart';
 import '../../../data/models/achievement_model.dart';
 import '../../../data/models/holiday_model.dart';
 import '../../../data/mock/mock_data.dart';
+import '../../auth/providers/auth_provider.dart';
 
 final currentUserProvider = Provider<UserModel>((ref) {
-  return MockData.currentUser;
+  return ref.watch(currentSessionUserProvider) ?? MockData.currentUser;
 });
 
 final achievementsProvider = Provider<List<AchievementModel>>((ref) {

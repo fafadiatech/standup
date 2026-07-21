@@ -14,6 +14,9 @@ class AppStrings {
   static const String loginButton = 'Login';
   static const String emailRequired = 'Email is required';
   static const String passwordRequired = 'Password is required';
+  static const String loginFailed = 'Invalid credentials. Try again.';
+  static const String loginHelpText =
+      'Use sarah@company.com or pantry@company.com with password123';
 
   // Home
   static const String greeting = 'Hi';
@@ -31,9 +34,11 @@ class AppStrings {
   // Navigation
   static const String navHome = 'Home';
   static const String navTask = 'Tasks';
+  static const String navSnack = 'Pantry';
   static const String navLeave = 'Leaves';
   static const String navBoard = 'Board';
   static const String navProfile = 'Profile';
+  static const String navPantryOrders = 'Orders';
 
   // Placeholders
   static const String taskComingSoon = 'Tasks coming soon';
@@ -44,4 +49,12 @@ class AppStrings {
   // Routes
   static const String routeLogin = '/login';
   static const String routeHome = '/home';
+  static const String routeTask = '/task';
+  static const String routeLeave = '/leave';
+  static const String routeBoard = '/board';
+  static const String routeProfile = '/profile';
+  static const String routeSnack = '/snack';
+  static const String routeSnackApply = '/snack/apply';
+  static const String routePantryDashboard = '/pantry';
+  static const String routePantryProfile = '/pantry/profile';
 }

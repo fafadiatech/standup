@@ -35,8 +35,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (!mounted) return;
 
-    ref.read(authProvider.notifier).login();
-    context.go(AppStrings.routeHome);
+    final success = ref.read(authProvider.notifier).login(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+
+    if (!success) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.loginFailed)),
+      );
+      return;
+    }
+
+    final role = ref.read(authProvider).user?.role.toLowerCase() ?? '';
+    context.go(
+      role == 'pantry'
+          ? AppStrings.routePantryDashboard
+          : AppStrings.routeHome,
+    );
   }
 
   @override
@@ -159,6 +176,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         )
                       : const Text(AppStrings.loginButton),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  AppStrings.loginHelpText,
+                  style: theme.textTheme.bodySmall,
                 ),
                 const SizedBox(height: 24),
               ],

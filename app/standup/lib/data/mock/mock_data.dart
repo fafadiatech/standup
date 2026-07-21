@@ -11,6 +11,8 @@ import '../models/time_log_model.dart';
 import '../models/leave_model.dart';
 import '../models/leaderboard_model.dart';
 import '../models/notification_model.dart';
+import '../models/pantry_catalog_item.dart';
+import '../models/snack_request_model.dart';
 import 'package:flutter/material.dart';
 
 class MockData {
@@ -34,6 +36,96 @@ class MockData {
     managedBy: 'Raj Mehta',
     employeeId: 'EMP-0042',
   );
+
+  static const UserModel pantryUser = UserModel(
+    id: '2',
+    name: 'Ravi Pantry',
+    email: 'pantry@company.com',
+    avatarInitials: 'RP',
+    leaveBalance: 0,
+    energyPoints: 0,
+    issueNumber: '-',
+    issueName: 'Pantry operations',
+    issueStatus: 'active',
+    role: 'Pantry',
+    department: 'Operations',
+    phone: '+91 98765 10000',
+    location: 'Pune, India',
+    joinedDate: 'Jan 2023',
+    managedBy: 'Asha Kulkarni',
+    employeeId: 'PAN-0001',
+  );
+
+  static const List<UserModel> users = [currentUser, pantryUser];
+
+  static const List<PantryCatalogItem> pantryCatalog = [
+    PantryCatalogItem(name: 'Sandwich', type: SnackItemType.snack, emoji: '🥪'),
+    PantryCatalogItem(name: 'Cookies', type: SnackItemType.snack, emoji: '🍪'),
+    PantryCatalogItem(name: 'Samosa', type: SnackItemType.snack, emoji: '🥟'),
+    PantryCatalogItem(name: 'Muffin', type: SnackItemType.snack, emoji: '🧁'),
+    PantryCatalogItem(name: 'Tea', type: SnackItemType.drink, emoji: '🍵'),
+    PantryCatalogItem(name: 'Coffee', type: SnackItemType.drink, emoji: '☕'),
+    PantryCatalogItem(name: 'Lemon Juice', type: SnackItemType.drink, emoji: '🍋'),
+    PantryCatalogItem(name: 'Buttermilk', type: SnackItemType.drink, emoji: '🥛'),
+  ];
+
+  static final List<SnackRequestModel> snackRequests = [
+    SnackRequestModel(
+      id: 'snk-1',
+      requestedByUserId: '1',
+      requesterName: 'Sarah Connor',
+      items: const [
+        SnackRequestLineItem(
+          itemType: SnackItemType.drink,
+          itemName: 'Coffee',
+          quantity: 1,
+        ),
+        SnackRequestLineItem(
+          itemType: SnackItemType.snack,
+          itemName: 'Cookies',
+          quantity: 2,
+        ),
+      ],
+      notes: 'No sugar in coffee',
+      location: SnackRequestLocation.desk,
+      requestedAt: DateTime(2026, 7, 21, 10, 30),
+      status: SnackRequestStatus.pending,
+    ),
+    SnackRequestModel(
+      id: 'snk-2',
+      requestedByUserId: '1',
+      requesterName: 'Sarah Connor',
+      items: const [
+        SnackRequestLineItem(
+          itemType: SnackItemType.snack,
+          itemName: 'Sandwich',
+          quantity: 2,
+        ),
+      ],
+      notes: 'Veg only',
+      requestedAt: DateTime(2026, 7, 20, 16, 0),
+      status: SnackRequestStatus.accepted,
+      handledByPantryUserId: '2',
+      handledAt: DateTime(2026, 7, 20, 16, 15),
+    ),
+    SnackRequestModel(
+      id: 'snk-3',
+      requestedByUserId: '1',
+      requesterName: 'Sarah Connor',
+      items: const [
+        SnackRequestLineItem(
+          itemType: SnackItemType.drink,
+          itemName: 'Tea',
+          quantity: 1,
+        ),
+      ],
+      notes: null,
+      requestedAt: DateTime(2026, 7, 19, 11, 40),
+      status: SnackRequestStatus.completed,
+      handledByPantryUserId: '2',
+      handledAt: DateTime(2026, 7, 19, 12, 0),
+    ),
+  ];
 
   static const List<AchievementModel> achievements = [
     AchievementModel(
