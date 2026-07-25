@@ -229,7 +229,6 @@ class _TaskMetaBlock extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            _IndicatorRow(task: task),
           ],
         ),
         if (hasRow2) ...[
@@ -292,35 +291,6 @@ class _MetaChip extends StatelessWidget {
           color: color,
           fontWeight: FontWeight.w600,
         ),
-      ),
-    );
-  }
-}
-
-class _IndicatorRow extends StatelessWidget {
-  final TaskModel task;
-
-  const _IndicatorRow({required this.task});
-
-  @override
-  Widget build(BuildContext context) {
-    final hasIndicators = task.hasPendingApproval || task.hasActiveTimer;
-
-    if (!hasIndicators) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (task.hasPendingApproval)
-            const Icon(Icons.pending_actions,
-                size: 14, color: Color(0xFFF97316)),
-          if (task.hasActiveTimer) ...[
-            const SizedBox(width: 4),
-            const Icon(Icons.timer, size: 14, color: AppColors.primary),
-          ],
-        ],
       ),
     );
   }
