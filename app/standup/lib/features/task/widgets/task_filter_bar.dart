@@ -48,7 +48,7 @@ class TaskFilterBar extends ConsumerWidget {
           ),
         ),
         SizedBox(
-          height: 44,
+          height: 48,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             scrollDirection: Axis.horizontal,
@@ -65,7 +65,7 @@ class TaskFilterBar extends ConsumerWidget {
                 backgroundColor: AppColors.cardBackground,
                 labelStyle: TextStyle(
                   color: isActive ? AppColors.white : AppColors.textPrimary,
-                  fontSize: 12,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
                 side: BorderSide(

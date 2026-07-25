@@ -6,10 +6,10 @@ class TaskDetailTabs extends StatelessWidget implements PreferredSizeWidget {
 
   static const List<String> tabs = [
     'Overview',
+    'Time Logs',
     'Checklist',
     'Attachments',
     'Comments',
-    'Time Logs',
   ];
 
   @override

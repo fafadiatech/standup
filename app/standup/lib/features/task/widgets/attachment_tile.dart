@@ -73,7 +73,7 @@ class AttachmentTile extends StatelessWidget {
                 Text(
                   attachment.fileSize,
                   style: const TextStyle(
-                      fontSize: 12, color: AppColors.textSecondary),
+                      fontSize: 13, color: AppColors.textSecondary),
                 ),
               ],
             ),

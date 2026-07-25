@@ -28,6 +28,7 @@ class AppStrings {
   static const String energyPointsSuffix = ' ⚡';
   static const String earnedSoFar = 'earned so far';
   static const String upcomingHolidays = 'Upcoming holidays';
+  static const String listOfHolidays = 'List of Holidays';
   static const String weeklyMeetings = 'Weekly Meetings';
   static const String upcomingEvents = 'Upcoming Events';
 

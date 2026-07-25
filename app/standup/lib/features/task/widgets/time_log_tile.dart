@@ -57,14 +57,14 @@ class TimeLogTile extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             '$startStr – $endStr',
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
           if (log.notes != null && log.notes!.isNotEmpty) ...[
             const SizedBox(height: 4),
             Text(
               log.notes!,
               style: const TextStyle(
-                  fontSize: 12, color: AppColors.textSecondary, height: 1.3),
+                  fontSize: 13, color: AppColors.textSecondary, height: 1.3),
             ),
           ],
         ],

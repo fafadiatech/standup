@@ -169,7 +169,27 @@ class MockData {
     HolidayModel(
       id: '2',
       name: "New Year's Day",
-      date: 'Jan 1, 2025',
+      date: 'Jan 1, 2026',
+    ),
+    HolidayModel(
+      id: '3',
+      name: 'Republic Day',
+      date: 'Jan 26, 2026',
+    ),
+    HolidayModel(
+      id: '4',
+      name: 'Holi',
+      date: 'Mar 14, 2026',
+    ),
+    HolidayModel(
+      id: '5',
+      name: 'Independence Day',
+      date: 'Aug 15, 2026',
+    ),
+    HolidayModel(
+      id: '6',
+      name: 'Diwali',
+      date: 'Nov 8, 2026',
     ),
   ];
 

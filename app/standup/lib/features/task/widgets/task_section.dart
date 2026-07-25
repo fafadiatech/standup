@@ -32,7 +32,7 @@ class _TaskSectionState extends State<TaskSection> {
         GestureDetector(
           onTap: () => setState(() => _expanded = !_expanded),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
                 Container(
@@ -47,7 +47,7 @@ class _TaskSectionState extends State<TaskSection> {
                 Text(
                   widget.title,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: widget.titleColor,
                     letterSpacing: 0.3,
@@ -64,7 +64,7 @@ class _TaskSectionState extends State<TaskSection> {
                   child: Text(
                     '${widget.tasks.length}',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: widget.titleColor,
                     ),

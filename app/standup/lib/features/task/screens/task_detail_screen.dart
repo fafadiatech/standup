@@ -128,10 +128,10 @@ class TaskDetailScreen extends ConsumerWidget {
         body: TabBarView(
           children: [
             _OverviewTab(task: task),
+            _TimeLogsTab(task: task),
             _ChecklistTab(task: task),
             _AttachmentsTab(task: task),
             _CommentsTab(task: task),
-            _TimeLogsTab(task: task),
           ],
         ),
         bottomNavigationBar: _BottomActionBar(task: task),
@@ -150,96 +150,142 @@ class _OverviewTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dueDateStr = DateFormat('EEE, dd MMM yyyy', 'en_US').format(task.dueDate);
+    final dueDateStr =
+        DateFormat('EEE, dd MMM yyyy', 'en_US').format(task.dueDate);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Title
+          Text(
+            task.title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              height: 1.3,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 20),
           // Description
           const Text(
             'Description',
             style: TextStyle(
-                fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             task.description,
             style: const TextStyle(
-                fontSize: 14, color: AppColors.textSecondary, height: 1.5),
-          ),
-          const SizedBox(height: 16),
-          // Related Document
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceVariant,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.badgeBorder),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.link, size: 14, color: AppColors.primary),
-                const SizedBox(width: 6),
-                Text(
-                  task.relatedDocument,
-                  style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.primary),
-                ),
-              ],
+              fontSize: 15,
+              color: AppColors.textPrimary,
+              height: 1.5,
             ),
           ),
-          const SizedBox(height: 16),
-          // Priority + Status
+          const SizedBox(height: 20),
+          // Meta: due date + chips
+          const Text(
+            'Details',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
           Row(
+            children: [
+              const Icon(Icons.calendar_today_outlined,
+                  size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 8),
+              Text(
+                'Due $dueDateStr',
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               _DetailChip(
                 label: _priorityLabel(task.priority),
                 color: _priorityColor(task.priority),
               ),
-              const SizedBox(width: 8),
               _DetailChip(
                 label: _statusLabel(task.status),
                 color: _statusColor(task.status),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Due date
-          Row(
-            children: [
-              const Icon(Icons.calendar_today_outlined,
-                  size: 15, color: AppColors.textSecondary),
-              const SizedBox(width: 6),
-              Text(
-                'Due: $dueDateStr',
-                style: const TextStyle(
-                    fontSize: 14, color: AppColors.textSecondary),
+          if (task.relatedDocument.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            const Text(
+              'Related document',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
               ),
-            ],
-          ),
-          if (task.hasPendingApproval) ...[
-            const SizedBox(height: 12),
+            ),
+            const SizedBox(height: 8),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVariant,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.badgeBorder),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.link, size: 16, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      task.relatedDocument,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (task.hasPendingApproval) ...[
+            const SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: const Color(0xFFF97316).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFF97316).withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: const Color(0xFFF97316).withValues(alpha: 0.3)),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.pending_actions, size: 16, color: Color(0xFFF97316)),
+                  Icon(Icons.pending_actions,
+                      size: 16, color: Color(0xFFF97316)),
                   SizedBox(width: 8),
                   Text(
                     'Pending approval',
                     style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFFF97316),
-                        fontWeight: FontWeight.w500),
+                      fontSize: 14,
+                      color: Color(0xFFF97316),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
@@ -260,7 +306,7 @@ class _DetailChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
@@ -268,8 +314,11 @@ class _DetailChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style:
-            TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          fontSize: 13,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -574,7 +623,6 @@ class _BottomActionBar extends ConsumerWidget {
             child: OutlinedButton(
               onPressed: () =>
                   notifier.updateTaskStatus(task.id, TaskStatus.paused),
-              style: AppButtonStyles.warningOutlined,
               child: const Text('Pause'),
             ),
           ),
@@ -583,7 +631,6 @@ class _BottomActionBar extends ConsumerWidget {
             child: ElevatedButton(
               onPressed: () =>
                   notifier.updateTaskStatus(task.id, TaskStatus.completed),
-              style: AppButtonStyles.success,
               child: const Text('Complete'),
             ),
           ),
@@ -602,7 +649,6 @@ class _BottomActionBar extends ConsumerWidget {
             child: ElevatedButton(
               onPressed: () =>
                   notifier.updateTaskStatus(task.id, TaskStatus.completed),
-              style: AppButtonStyles.success,
               child: const Text('Complete'),
             ),
           ),

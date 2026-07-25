@@ -104,7 +104,7 @@ class TaskCard extends ConsumerWidget {
         return false;
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(12),
@@ -118,37 +118,40 @@ class TaskCard extends ConsumerWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 8, 12),
-          child: Row(
+          padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => context.push('/task/${task.id}'),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => context.push('/task/${task.id}'),
+                      child: Text(
                         task.title,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
+                          height: 1.3,
                           color: AppColors.textPrimary,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      _TaskMetaLine(
-                        task: task,
-                        showStatus: _shouldShowStatus(task),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  _ActionButton(task: task),
+                ],
               ),
-              _ActionButton(task: task),
+              const SizedBox(height: 8),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => context.push('/task/${task.id}'),
+                child: _TaskMetaBlock(task: task),
+              ),
             ],
           ),
         ),
@@ -163,7 +166,7 @@ class TaskCard extends ConsumerWidget {
     required String label,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(12),
@@ -189,62 +192,107 @@ class TaskCard extends ConsumerWidget {
   }
 }
 
-class _TaskMetaLine extends StatelessWidget {
+class _TaskMetaBlock extends StatelessWidget {
   final TaskModel task;
-  final bool showStatus;
 
-  const _TaskMetaLine({required this.task, required this.showStatus});
+  const _TaskMetaBlock({required this.task});
 
   @override
   Widget build(BuildContext context) {
     final dueDateStr =
         DateFormat('EEE, dd MMM', 'en_US').format(task.dueDate);
-    final spans = <InlineSpan>[
-      TextSpan(text: 'Due $dueDateStr'),
-    ];
+    final showPriority = _shouldShowPriority(task.priority);
+    final showStatus = _shouldShowStatus(task);
+    final hasChips = showPriority || showStatus;
+    final hasRelated = task.relatedDocument.isNotEmpty;
+    final hasRow2 = hasRelated || hasChips;
 
-    if (task.relatedDocument.isNotEmpty) {
-      spans.add(const TextSpan(text: ' · '));
-      spans.add(TextSpan(text: task.relatedDocument));
-    }
-
-    if (_shouldShowPriority(task.priority)) {
-      spans.add(const TextSpan(text: ' · '));
-      spans.add(
-        TextSpan(
-          text: _priorityLabel(task.priority),
-          style: TextStyle(color: _priorityColor(task.priority)),
-        ),
-      );
-    }
-
-    if (showStatus) {
-      spans.add(const TextSpan(text: ' · '));
-      spans.add(
-        TextSpan(
-          text: _statusLabel(task.status),
-          style: TextStyle(color: _statusColor(task.status)),
-        ),
-      );
-    }
-
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Text.rich(
-            TextSpan(
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
-              children: spans,
+        Row(
+          children: [
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 14,
+              color: AppColors.textSecondary,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Due $dueDateStr',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            _IndicatorRow(task: task),
+          ],
         ),
-        _IndicatorRow(task: task),
+        if (hasRow2) ...[
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (hasRelated)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 180),
+                  child: Text(
+                    task.relatedDocument,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              if (showPriority)
+                _MetaChip(
+                  label: _priorityLabel(task.priority),
+                  color: _priorityColor(task.priority),
+                ),
+              if (showStatus)
+                _MetaChip(
+                  label: _statusLabel(task.status),
+                  color: _statusColor(task.status),
+                ),
+            ],
+          ),
+        ],
       ],
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  final String label;
+  final Color color;
+
+  const _MetaChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
