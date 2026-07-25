@@ -26,7 +26,7 @@ class EmployeeOfMonth {
   final String description;
   final String initials;
   final Color avatarColor;
-  // Pre-formatted as dd/MM/yyyy
+  // Pre-formatted as Month YYYY
   final String displayDate;
 
   const EmployeeOfMonth({

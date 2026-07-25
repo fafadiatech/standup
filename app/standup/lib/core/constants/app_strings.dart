@@ -21,9 +21,9 @@ class AppStrings {
   // Home
   static const String greeting = 'Hi';
   static const String greetingSuffix = ' 👋';
-  static const String leaveBalance = 'Leave Balance';
-  static const String leaveBalanceSuffix = ' ☀️';
-  static const String daysLeft = 'days left';
+  static const String openTasks = 'Open Tasks';
+  static const String openTasksSuffix = ' 📋';
+  static const String tasksRemaining = 'remaining';
   static const String energyPoints = 'Energy points';
   static const String energyPointsSuffix = ' ⚡';
   static const String earnedSoFar = 'earned so far';

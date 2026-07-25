@@ -355,7 +355,7 @@ class MockData {
         'Semina gurung has been performing outstanding and has finished xconnect project and got employee of this month',
     initials: 'SG',
     avatarColor: Color(0xFF7C3AED),
-    displayDate: '24/03/2024',
+    displayDate: 'March 2024',
   );
 
   static const List<LeaderboardEntry> leaderboard = [

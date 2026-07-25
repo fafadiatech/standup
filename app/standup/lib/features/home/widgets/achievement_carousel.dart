@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/achievement_model.dart';
@@ -12,13 +14,39 @@ class AchievementCarousel extends StatefulWidget {
 }
 
 class _AchievementCarouselState extends State<AchievementCarousel> {
+  static const _autoRotateInterval = Duration(seconds: 4);
+
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  Timer? _autoRotateTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoRotate();
+  }
 
   @override
   void dispose() {
+    _autoRotateTimer?.cancel();
     _pageController.dispose();
     super.dispose();
+  }
+
+  void _startAutoRotate() {
+    _autoRotateTimer?.cancel();
+    if (widget.achievements.length <= 1) return;
+
+    _autoRotateTimer = Timer.periodic(_autoRotateInterval, (_) {
+      if (!_pageController.hasClients) return;
+
+      final nextPage = (_currentPage + 1) % widget.achievements.length;
+      _pageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 
   @override
@@ -33,6 +61,7 @@ class _AchievementCarouselState extends State<AchievementCarousel> {
               setState(() {
                 _currentPage = index;
               });
+              _startAutoRotate();
             },
             itemCount: widget.achievements.length,
             itemBuilder: (context, index) {

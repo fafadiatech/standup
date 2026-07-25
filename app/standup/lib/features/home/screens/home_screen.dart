@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../data/models/task_model.dart';
+import '../../task/providers/task_provider.dart';
 import '../providers/home_provider.dart';
 import '../widgets/greeting_header.dart';
 import '../widgets/stat_card.dart';
@@ -21,6 +23,11 @@ class HomeScreen extends ConsumerWidget {
     final holidays = ref.watch(holidaysProvider);
     final meetings = ref.watch(weeklyMeetingsProvider);
     final events = ref.watch(upcomingEventsProvider);
+    final openTaskCount = ref
+        .watch(taskProvider)
+        .tasks
+        .where((t) => t.status != TaskStatus.completed)
+        .length;
 
     return AppScaffold(
       child: Scaffold(
@@ -43,10 +50,10 @@ class HomeScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: StatCard(
-                          title: AppStrings.leaveBalance,
-                          titleSuffix: AppStrings.leaveBalanceSuffix,
-                          value: '${user.leaveBalance} days',
-                          subtitle: AppStrings.daysLeft,
+                          title: AppStrings.openTasks,
+                          titleSuffix: AppStrings.openTasksSuffix,
+                          value: '$openTaskCount',
+                          subtitle: AppStrings.tasksRemaining,
                           backgroundColor: AppColors.cardBackground,
                         ),
                       ),
