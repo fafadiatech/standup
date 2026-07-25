@@ -180,7 +180,7 @@ class _ApplySnackRequestScreenState
                           '$_cartItemCount item${_cartItemCount == 1 ? '' : 's'}',
                           style: const TextStyle(
                             color: AppColors.textSecondary,
-                            fontSize: 13,
+                            fontSize: 14,
                           ),
                         ),
                       ],
@@ -270,7 +270,7 @@ class _ApplySnackRequestScreenState
                         labelStyle: TextStyle(
                           color:
                               selected ? AppColors.white : AppColors.textPrimary,
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
                         side: BorderSide(
@@ -415,7 +415,7 @@ class _PantryItemTile extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: inCart ? FontWeight.w600 : FontWeight.w500,
                       color: AppColors.textPrimary,
                     ),

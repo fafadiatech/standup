@@ -78,7 +78,7 @@ class PantryProfileScreen extends ConsumerWidget {
                         Text(
                           user.role,
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: 14,
                             color: AppColors.textSecondary,
                           ),
                         ),
@@ -86,7 +86,7 @@ class PantryProfileScreen extends ConsumerWidget {
                         Text(
                           user.email,
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: 14,
                             color: AppColors.textSecondary,
                           ),
                         ),

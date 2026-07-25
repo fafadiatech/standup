@@ -43,12 +43,12 @@ class StatCard extends StatelessWidget {
                   text: title,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w500,
-                    fontSize: 13,
+                    fontSize: 14,
                   ),
                 ),
                 TextSpan(
                   text: titleSuffix,
-                  style: const TextStyle(fontSize: 13),
+                  style: const TextStyle(fontSize: 14),
                 ),
               ],
             ),

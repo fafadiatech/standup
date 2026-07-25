@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_button_styles.dart';
 import '../providers/timer_provider.dart';
 import '../providers/task_provider.dart';
 
@@ -50,7 +51,7 @@ class LiveTimerWidget extends ConsumerWidget {
               Text(
                 'Time Tracker',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: isThisTask
                       ? AppColors.primary
@@ -80,12 +81,7 @@ class LiveTimerWidget extends ConsumerWidget {
                   onPressed: () => timerNotifier.startTimer(taskId),
                   icon: const Icon(Icons.play_arrow, size: 18),
                   label: const Text('Start Timer'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                  ),
+                  style: AppButtonStyles.compactPrimary,
                 ),
               )
             else
@@ -103,12 +99,7 @@ class LiveTimerWidget extends ConsumerWidget {
                         size: 16,
                       ),
                       label: Text(timerState.isRunning ? 'Pause' : 'Resume'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: AppColors.primary),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        textStyle: const TextStyle(fontSize: 13),
-                      ),
+                      style: AppButtonStyles.compactOutlined,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -122,13 +113,7 @@ class LiveTimerWidget extends ConsumerWidget {
                       },
                       icon: const Icon(Icons.stop, size: 16),
                       label: const Text('Stop'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF4444),
-                        foregroundColor: AppColors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        textStyle: const TextStyle(fontSize: 13),
-                      ),
+                      style: AppButtonStyles.compactDestructive,
                     ),
                   ),
                 ],
@@ -153,7 +138,7 @@ class _OtherTaskMessage extends StatelessWidget {
           child: Text(
             'Timer is active on another task.',
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               color: Color(0xFFF97316),
               fontWeight: FontWeight.w500,
             ),

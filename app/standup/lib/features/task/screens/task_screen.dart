@@ -93,8 +93,6 @@ class TaskScreen extends ConsumerWidget {
               right: 16,
               child: FloatingActionButton(
                 onPressed: () => context.push('/task/create'),
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
                 child: const Icon(Icons.add),
               ),
             ),
@@ -139,7 +137,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 6),
           const Text(
             'Tap + to create a new task',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
         ],
       ),

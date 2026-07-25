@@ -30,7 +30,7 @@ class LeaveHistoryItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  record.title,
+                  _typeLabel,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -38,19 +38,7 @@ class LeaveHistoryItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 5),
-                Row(
-                  children: [
-                    Text(
-                      _typeLabel,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    LeaveStatusChip(status: record.status),
-                  ],
-                ),
+                LeaveStatusChip(status: record.status),
               ],
             ),
           ),

@@ -46,7 +46,7 @@ class CommentTile extends StatelessWidget {
                     Text(
                       comment.author,
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
@@ -55,7 +55,7 @@ class CommentTile extends StatelessWidget {
                     Text(
                       timeStr,
                       style: const TextStyle(
-                          fontSize: 11, color: AppColors.textSecondary),
+                          fontSize: 12, color: AppColors.textSecondary),
                     ),
                   ],
                 ),
@@ -63,7 +63,7 @@ class CommentTile extends StatelessWidget {
                 Text(
                   comment.text,
                   style: const TextStyle(
-                      fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                      fontSize: 14, color: AppColors.textSecondary, height: 1.4),
                 ),
               ],
             ),

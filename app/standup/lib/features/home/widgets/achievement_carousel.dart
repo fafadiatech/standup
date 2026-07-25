@@ -149,7 +149,7 @@ class _AchievementCard extends StatelessWidget {
                   achievement.personName,
                   style: const TextStyle(
                     color: AppColors.white,
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -158,7 +158,7 @@ class _AchievementCard extends StatelessWidget {
                 achievement.achievedDate,
                 style: const TextStyle(
                   color: Color(0xCCFFFFFF),
-                  fontSize: 11,
+                  fontSize: 12,
                 ),
               ),
             ],

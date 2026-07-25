@@ -89,7 +89,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Text(
                           user.role,
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: 14,
                             color: AppColors.textSecondary,
                           ),
                         ),
@@ -360,7 +360,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(
-          fontSize: 13,
+          fontSize: 14,
           fontWeight: FontWeight.w700,
           color: AppColors.textSecondary,
           letterSpacing: 0.5,
@@ -392,7 +392,7 @@ class _Chip extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: FontWeight.w600,
           color: textColor,
         ),
@@ -445,7 +445,7 @@ class _StatTile extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              fontSize: 11,
+              fontSize: 12,
               color: AppColors.textSecondary,
             ),
             textAlign: TextAlign.center,
@@ -518,7 +518,7 @@ class _InfoRow extends StatelessWidget {
                 Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
                 ),

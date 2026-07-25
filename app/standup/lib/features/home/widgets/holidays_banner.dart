@@ -28,7 +28,7 @@ class HolidaysBanner extends StatelessWidget {
               'Upcoming holidays',
               style: TextStyle(
                 color: AppColors.white,
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),

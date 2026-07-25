@@ -46,14 +46,7 @@ class NotificationsScreen extends ConsumerWidget {
           if (hasUnread)
             TextButton(
               onPressed: notifier.markAllAsRead,
-              child: const Text(
-                'Mark all read',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: const Text('Mark all read'),
             ),
         ],
       ),
@@ -143,7 +136,7 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: 6),
           const Text(
             'No notifications right now.',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
         ],
       ),

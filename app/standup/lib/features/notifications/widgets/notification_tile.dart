@@ -91,7 +91,7 @@ class NotificationTile extends StatelessWidget {
                         Text(
                           _formatTime(notification.createdAt),
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 12,
                             color: AppColors.textSecondary,
                           ),
                         ),
@@ -101,7 +101,7 @@ class NotificationTile extends StatelessWidget {
                     Text(
                       notification.body,
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         color: AppColors.textSecondary,
                         height: 1.4,
                       ),

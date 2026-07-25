@@ -85,40 +85,11 @@ class LeaveScreen extends ConsumerWidget {
             const SizedBox(height: 20),
 
             // Apply button
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primaryLight, AppColors.accent],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => const ApplyLeaveScreen()),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Apply for leave',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ApplyLeaveScreen()),
               ),
+              child: const Text('Apply for leave'),
             ),
             const SizedBox(height: 28),
 
@@ -129,8 +100,6 @@ class LeaveScreen extends ConsumerWidget {
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
-                decoration: TextDecoration.underline,
-                decorationColor: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),

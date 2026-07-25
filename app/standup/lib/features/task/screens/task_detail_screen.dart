@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_button_styles.dart';
 import '../../../data/models/task_model.dart';
 import '../../../data/models/comment_model.dart';
 import '../providers/task_provider.dart';
@@ -159,7 +160,7 @@ class _OverviewTab extends StatelessWidget {
           const Text(
             'Description',
             style: TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 6),
           Text(
@@ -216,7 +217,7 @@ class _OverviewTab extends StatelessWidget {
               Text(
                 'Due: $dueDateStr',
                 style: const TextStyle(
-                    fontSize: 13, color: AppColors.textSecondary),
+                    fontSize: 14, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -236,7 +237,7 @@ class _OverviewTab extends StatelessWidget {
                   Text(
                     'Pending approval',
                     style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         color: Color(0xFFF97316),
                         fontWeight: FontWeight.w500),
                   ),
@@ -304,7 +305,7 @@ class _ChecklistTab extends ConsumerWidget {
             Text(
               '$completed / $total completed',
               style: const TextStyle(
-                  fontSize: 13, color: AppColors.textSecondary),
+                  fontSize: 14, color: AppColors.textSecondary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -484,11 +485,7 @@ class _TimeLogsTab extends ConsumerWidget {
           onPressed: () => context.push('/task/${task.id}/log-time'),
           icon: const Icon(Icons.add, size: 16),
           label: const Text('Log Time Manually'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.primary,
-            side: const BorderSide(color: AppColors.primary),
-            padding: const EdgeInsets.symmetric(vertical: 10),
-          ),
+          style: AppButtonStyles.compactOutlined,
         ),
         const SizedBox(height: 16),
         if (updatedTask.timeLogs.isEmpty)
@@ -498,7 +495,7 @@ class _TimeLogsTab extends ConsumerWidget {
           const Text(
             'Time Logs',
             style: TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary),
           ),
@@ -567,14 +564,7 @@ class _BottomActionBar extends ConsumerWidget {
             child: ElevatedButton(
               onPressed: () =>
                   notifier.updateTaskStatus(task.id, TaskStatus.inProgress),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              child: const Text('Start',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              child: const Text('Start'),
             ),
           ),
         ];
@@ -584,13 +574,8 @@ class _BottomActionBar extends ConsumerWidget {
             child: OutlinedButton(
               onPressed: () =>
                   notifier.updateTaskStatus(task.id, TaskStatus.paused),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFF97316),
-                side: const BorderSide(color: Color(0xFFF97316)),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              child: const Text('Pause',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              style: AppButtonStyles.warningOutlined,
+              child: const Text('Pause'),
             ),
           ),
           const SizedBox(width: 12),
@@ -598,14 +583,8 @@ class _BottomActionBar extends ConsumerWidget {
             child: ElevatedButton(
               onPressed: () =>
                   notifier.updateTaskStatus(task.id, TaskStatus.completed),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF22C55E),
-                foregroundColor: AppColors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              child: const Text('Complete',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              style: AppButtonStyles.success,
+              child: const Text('Complete'),
             ),
           ),
         ];
@@ -615,13 +594,7 @@ class _BottomActionBar extends ConsumerWidget {
             child: OutlinedButton(
               onPressed: () =>
                   notifier.updateTaskStatus(task.id, TaskStatus.inProgress),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              child: const Text('Resume',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              child: const Text('Resume'),
             ),
           ),
           const SizedBox(width: 12),
@@ -629,14 +602,8 @@ class _BottomActionBar extends ConsumerWidget {
             child: ElevatedButton(
               onPressed: () =>
                   notifier.updateTaskStatus(task.id, TaskStatus.completed),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF22C55E),
-                foregroundColor: AppColors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              child: const Text('Complete',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              style: AppButtonStyles.success,
+              child: const Text('Complete'),
             ),
           ),
         ];

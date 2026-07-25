@@ -47,7 +47,7 @@ class _TaskSectionState extends State<TaskSection> {
                 Text(
                   widget.title,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: widget.titleColor,
                     letterSpacing: 0.3,
@@ -64,7 +64,7 @@ class _TaskSectionState extends State<TaskSection> {
                   child: Text(
                     '${widget.tasks.length}',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: widget.titleColor,
                     ),

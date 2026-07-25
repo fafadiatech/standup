@@ -10,7 +10,7 @@ class LeaveDateBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 48,
+      width: 52,
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.primary,
@@ -23,7 +23,7 @@ class LeaveDateBadge extends StatelessWidget {
             DateFormat('MMM').format(date).toUpperCase(),
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
             ),

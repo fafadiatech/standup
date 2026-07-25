@@ -22,9 +22,9 @@ class TaskDetailTabs extends StatelessWidget implements PreferredSizeWidget {
       tabAlignment: TabAlignment.start,
       labelColor: AppColors.primary,
       unselectedLabelColor: AppColors.textSecondary,
-      labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+      labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
       unselectedLabelStyle:
-          const TextStyle(fontWeight: FontWeight.w400, fontSize: 13),
+          const TextStyle(fontWeight: FontWeight.w400, fontSize: 14),
       indicatorColor: AppColors.primary,
       indicatorWeight: 2.5,
       tabs: tabs.map((t) => Tab(text: t)).toList(),

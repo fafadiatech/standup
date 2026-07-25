@@ -46,7 +46,7 @@ class GreetingHeader extends ConsumerWidget {
                   user.issueNumber,
                   style: const TextStyle(
                     color: AppColors.white,
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -55,7 +55,7 @@ class GreetingHeader extends ConsumerWidget {
               Text(
                 user.issueName,
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textPrimary,
                 ),

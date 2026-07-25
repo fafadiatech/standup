@@ -36,7 +36,7 @@ class TimeLogTile extends StatelessWidget {
               Text(
                 dateStr,
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
@@ -45,7 +45,7 @@ class TimeLogTile extends StatelessWidget {
               Text(
                 hoursStr,
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: AppColors.primary,
                 ),
@@ -91,7 +91,7 @@ class _SyncedBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600),
+        style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w600),
       ),
     );
   }

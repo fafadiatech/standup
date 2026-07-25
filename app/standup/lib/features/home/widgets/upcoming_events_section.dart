@@ -50,7 +50,7 @@ class _EventTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 44,
+            width: 48,
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
               color: AppColors.primary,
@@ -70,7 +70,7 @@ class _EventTile extends StatelessWidget {
                   _extractMonth(event.date),
                   style: const TextStyle(
                     color: Color(0xCCFFFFFF),
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_button_styles.dart';
 import '../../../data/models/snack_request_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../../shared/widgets/pantry_scaffold.dart';
@@ -58,6 +59,7 @@ class PantryDashboardScreen extends ConsumerWidget {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => _complete(ref, request.id),
+                  style: AppButtonStyles.success,
                   child: const Text('Mark Complete'),
                 ),
               ),
@@ -103,6 +105,7 @@ class PantryDashboardScreen extends ConsumerWidget {
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
+              style: AppButtonStyles.compactDestructive,
               child: const Text('Reject'),
             ),
           ],

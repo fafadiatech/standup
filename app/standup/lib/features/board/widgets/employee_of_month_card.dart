@@ -18,7 +18,7 @@ class EmployeeOfMonthCard extends StatelessWidget {
             const Text(
               'EMPLOYEE OF THE MONTH',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
                 letterSpacing: 0.3,
@@ -112,7 +112,7 @@ class EmployeeOfMonthCard extends StatelessWidget {
                     Text(
                       employee.description,
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         color: AppColors.textPrimary,
                         height: 1.4,
                       ),

@@ -179,7 +179,7 @@ class TaskCard extends ConsumerWidget {
             label,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
           ),

@@ -152,19 +152,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: _save,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: const Text(
-                'Save Task',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
+              child: const Text('Save Task'),
             ),
           ],
         ),
@@ -228,7 +216,7 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(
-          fontSize: 13,
+          fontSize: 14,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),

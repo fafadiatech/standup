@@ -13,7 +13,6 @@ class ApplyLeaveScreen extends ConsumerStatefulWidget {
 
 class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
   final _reasonController = TextEditingController();
 
   LeaveType _selectedType = LeaveType.paid;
@@ -22,7 +21,6 @@ class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
 
   @override
   void dispose() {
-    _titleController.dispose();
     _reasonController.dispose();
     super.dispose();
   }
@@ -56,7 +54,6 @@ class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
 
     final record = LeaveRecord(
       id: 'lv-${DateTime.now().millisecondsSinceEpoch}',
-      title: _titleController.text.trim(),
       type: _selectedType,
       status: LeaveStatus.pending,
       startDate: _startDate,
@@ -91,15 +88,6 @@ class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SectionLabel(label: 'Leave title'),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _titleController,
-                decoration: _inputDecoration('e.g. Sick leave'),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Title is required' : null,
-              ),
-              const SizedBox(height: 20),
               _SectionLabel(label: 'Leave type'),
               const SizedBox(height: 8),
               DropdownButtonFormField<LeaveType>(
@@ -160,24 +148,9 @@ class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
                 maxLines: 3,
               ),
               const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Submit Request',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ),
+              ElevatedButton(
+                onPressed: _submit,
+                child: const Text('Submit Request'),
               ),
             ],
           ),
@@ -216,7 +189,7 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       label,
       style: const TextStyle(
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.textSecondary,
       ),

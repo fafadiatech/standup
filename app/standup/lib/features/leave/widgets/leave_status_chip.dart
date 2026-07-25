@@ -9,36 +9,25 @@ class LeaveStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, bg, fg) = switch (status) {
-      LeaveStatus.pending => (
-          'PENDING',
-          const Color(0xFFFEF3C7),
-          const Color(0xFFD97706),
-        ),
-      LeaveStatus.approved => (
-          'APPROVED',
-          const Color(0xFFDCFCE7),
-          AppColors.success,
-        ),
-      LeaveStatus.rejected => (
-          'REJECTED',
-          const Color(0xFFFFE4E6),
-          AppColors.error,
-        ),
+    final (label, color) = switch (status) {
+      LeaveStatus.pending => ('PENDING', AppColors.warning),
+      LeaveStatus.approved => ('APPROVED', AppColors.success),
+      LeaveStatus.rejected => ('REJECTED', AppColors.error),
     };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: FontWeight.w700,
-          color: fg,
+          color: color,
           letterSpacing: 0.4,
         ),
       ),

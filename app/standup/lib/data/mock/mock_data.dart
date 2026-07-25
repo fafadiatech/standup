@@ -227,7 +227,6 @@ class MockData {
   static final List<LeaveRecord> leaveHistory = [
     LeaveRecord(
       id: 'lv-1',
-      title: 'Not Feeling well today',
       type: LeaveType.paid,
       status: LeaveStatus.pending,
       startDate: DateTime(2024, 11, 23),
@@ -236,7 +235,6 @@ class MockData {
     ),
     LeaveRecord(
       id: 'lv-2',
-      title: 'Family Function',
       type: LeaveType.paid,
       status: LeaveStatus.rejected,
       startDate: DateTime(2024, 7, 12),
@@ -245,7 +243,6 @@ class MockData {
     ),
     LeaveRecord(
       id: 'lv-3',
-      title: 'Sick Leave',
       type: LeaveType.unpaid,
       status: LeaveStatus.approved,
       startDate: DateTime(2024, 4, 4),
@@ -254,7 +251,6 @@ class MockData {
     ),
     LeaveRecord(
       id: 'lv-4',
-      title: 'Sick Leave',
       type: LeaveType.unpaid,
       status: LeaveStatus.approved,
       startDate: DateTime(2024, 1, 1),
@@ -263,7 +259,6 @@ class MockData {
     ),
     LeaveRecord(
       id: 'lv-5',
-      title: 'Casual Leave',
       type: LeaveType.casual,
       status: LeaveStatus.approved,
       startDate: DateTime(2023, 10, 20),

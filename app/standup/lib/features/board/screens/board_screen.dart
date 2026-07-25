@@ -58,7 +58,7 @@ class BoardScreen extends ConsumerWidget {
                   child: Text(
                     'Employee name',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
@@ -67,7 +67,7 @@ class BoardScreen extends ConsumerWidget {
                 Text(
                   'Energy point',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
