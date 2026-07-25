@@ -71,14 +71,14 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
                   AchievementCarousel(achievements: achievements),
-                  const SizedBox(height: 16),
-                  if (holidays.isNotEmpty)
-                    HolidaysBanner(holiday: holidays.first),
                   const SizedBox(height: 24),
                   WeeklyMeetingsSection(meetings: meetings),
                   const SizedBox(height: 24),
                   UpcomingEventsSection(events: events),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+                  if (holidays.isNotEmpty)
+                    HolidaysBanner(holiday: holidays.first),
+                  const SizedBox(height: 16),
                 ]),
               ),
             ),
