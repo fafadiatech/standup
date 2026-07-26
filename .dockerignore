@@ -1,0 +1,28 @@
+# Flutter mobile app — large and not needed in the Docker image
+app/
+
+# Python build artefacts
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+*.egg-info/
+dist/
+build/
+
+# Git history
+.git/
+.gitignore
+
+# Docker files (no need to embed them inside the image)
+Dockerfile
+docker-compose.yaml
+.dockerignore
+
+# Local environment overrides
+.env
+*.env
+
+# Editor / OS noise
+.DS_Store
+.vscode/
+.idea/

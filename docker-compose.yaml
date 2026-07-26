@@ -1,0 +1,278 @@
+# ERPNext v15 + Standup — full stack docker compose
+#
+# First-time setup (run once after initial build):
+#   docker compose up --build -d
+#   docker compose run --rm create-site
+#
+# Subsequent starts:
+#   docker compose up -d
+#
+# Access ERPNext at: http://localhost:8080
+# Default credentials: administrator / admin
+#
+# To reset everything:
+#   docker compose down -v
+
+x-customizable-image: &customizable_image
+  image: custom-erpnext:v15
+  build:
+    context: .
+    dockerfile: Dockerfile
+  pull_policy: never
+
+x-depends-on-configurator: &depends_on_configurator
+  depends_on:
+    configurator:
+      condition: service_completed_successfully
+
+x-backend-defaults: &backend_defaults
+  <<: [*customizable_image, *depends_on_configurator]
+  volumes:
+    - sites:/home/frappe/frappe-bench/sites
+
+services:
+  # ─── Infrastructure ──────────────────────────────────────────────────────
+
+  db:
+    image: mariadb:10.6
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed
+      - --wait_timeout=28800
+      - --interactive_timeout=28800
+      - --net_read_timeout=3600
+      - --net_write_timeout=3600
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-admin}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: mysqladmin ping -h localhost --password=${DB_ROOT_PASSWORD:-admin}
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis-cache:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  redis-queue:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  # ─── One-time initialisation ─────────────────────────────────────────────
+
+  configurator:
+    <<: *customizable_image
+    restart: "no"
+    # Write common_site_config.json directly with Python so we never need
+    # `bench` in PATH (the bench venv is not activated by default when the
+    # entrypoint is overridden).
+    entrypoint: ["python3", "-c"]
+    command:
+      - |
+        import json, pathlib, sys
+        p = pathlib.Path('/home/frappe/frappe-bench/sites/common_site_config.json')
+        p.parent.mkdir(parents=True, exist_ok=True)
+        cfg = json.loads(p.read_text()) if p.exists() else {}
+        cfg.update({
+            'db_host': 'db',
+            'db_port': 3306,
+            'redis_cache': 'redis://redis-cache:6379',
+            'redis_queue': 'redis://redis-queue:6379',
+            'redis_socketio': 'redis://redis-queue:6379',
+            'socketio_port': 9000,
+        })
+        p.write_text(json.dumps(cfg, indent=2))
+        print('common_site_config.json written successfully', flush=True)
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+    depends_on:
+      db:
+        condition: service_healthy
+
+  create-site:
+    <<: *customizable_image
+    restart: "no"
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        set -ex
+
+        # Activate bench virtualenv so `bench` is on PATH
+        . /home/frappe/frappe-bench/env/bin/activate
+
+        # Wait for services using Python — avoids any wait-for-it PATH issues
+        python3 - <<'PYEOF'
+        import socket, time, sys
+        for host, port in [("db", 3306), ("redis-cache", 6379), ("redis-queue", 6379)]:
+            print(f"Waiting for {host}:{port} ...", flush=True)
+            for _ in range(60):
+                try:
+                    socket.create_connection((host, port), timeout=2).close()
+                    print(f"{host}:{port} is ready", flush=True)
+                    break
+                except OSError:
+                    time.sleep(2)
+            else:
+                print(f"ERROR: {host}:{port} not ready after 120 s", flush=True)
+                sys.exit(1)
+        PYEOF
+
+        # Existing sites volumes may predate standup registration in the image.
+        # Normalize apps.txt via Python so a missing trailing newline cannot
+        # glue "standup" onto "erpnext" (producing "erpnextstandup").
+        python3 - <<'PYEOF'
+        import json
+        from pathlib import Path
+
+        apps_txt = Path("/home/frappe/frappe-bench/sites/apps.txt")
+        apps = apps_txt.read_text().split() if apps_txt.exists() else []
+        # Repair corruption from a previous naive append
+        repaired = []
+        for a in apps:
+            if a == "erpnextstandup":
+                repaired.extend(["erpnext", "standup"])
+            else:
+                repaired.append(a)
+        if "standup" not in repaired:
+            repaired.append("standup")
+        seen, out = set(), []
+        for a in repaired:
+            if a not in seen:
+                seen.add(a)
+                out.append(a)
+        apps_txt.write_text("\n".join(out) + "\n")
+        print(f"apps.txt => {out}", flush=True)
+
+        apps_json = Path("/home/frappe/frappe-bench/sites/apps.json")
+        data = json.loads(apps_json.read_text()) if apps_json.exists() else {}
+        data.pop("erpnextstandup", None)
+        if "standup" not in data:
+            data["standup"] = {
+                "is_repo": False,
+                "resolution": {"commit_hash": None, "branch": None},
+                "required": [],
+                "idx": max((a.get("idx", 0) for a in data.values()), default=0) + 1,
+                "version": "0.1.0",
+            }
+            apps_json.write_text(json.dumps(data, indent=4))
+            print("standup added to apps.json", flush=True)
+        PYEOF
+
+        SITE=$${SITE_NAME:-site1.localhost}
+
+        if [ ! -f "/home/frappe/frappe-bench/sites/$$SITE/site_config.json" ]; then
+          echo "Creating site $$SITE ..."
+          bench new-site \
+            --no-mariadb-socket \
+            --admin-password="$${ADMIN_PASSWORD:-admin}" \
+            --db-root-password="$${DB_ROOT_PASSWORD:-admin}" \
+            --install-app erpnext \
+            --install-app standup \
+            --set-default \
+            "$$SITE"
+        else
+          echo "Site $$SITE already exists — installing standup (if needed) and migrating ..."
+          bench --site "$$SITE" install-app standup
+          bench --site "$$SITE" migrate
+        fi
+    environment:
+      SITE_NAME: ${SITE_NAME:-site1.localhost}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-admin}
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+
+  # ─── Application services ────────────────────────────────────────────────
+
+  backend:
+    <<: *backend_defaults
+    restart: unless-stopped
+    # Use the image start.sh — bare `gunicorn` is not on PATH; start.sh
+    # invokes /home/frappe/frappe-bench/env/bin/gunicorn.
+    command: start.sh
+    depends_on:
+      create-site:
+        condition: service_completed_successfully
+
+  frontend:
+    <<: *customizable_image
+    restart: unless-stopped
+    command: nginx-entrypoint.sh
+    environment:
+      BACKEND: backend:8000
+      FRAPPE_SITE_NAME_HEADER: ${SITE_NAME:-site1.localhost}
+      SOCKETIO: websocket:9000
+      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: "off"
+      PROXY_READ_TIMEOUT: "120"
+      CLIENT_MAX_BODY_SIZE: 50m
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    ports:
+      - "${HTTP_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_started
+
+  websocket:
+    <<: [*customizable_image, *depends_on_configurator]
+    restart: unless-stopped
+    command:
+      - node
+      - /home/frappe/frappe-bench/apps/frappe/socketio.js
+    volumes:
+      - sites:/home/frappe/frappe-bench/sites
+      - logs:/home/frappe/frappe-bench/logs
+    depends_on:
+      create-site:
+        condition: service_completed_successfully
+
+  # ─── Background workers ──────────────────────────────────────────────────
+
+  scheduler:
+    <<: *backend_defaults
+    restart: unless-stopped
+    command: bench schedule
+    depends_on:
+      create-site:
+        condition: service_completed_successfully
+
+  worker-short:
+    <<: *backend_defaults
+    restart: unless-stopped
+    command: bench worker --queue short
+    depends_on:
+      create-site:
+        condition: service_completed_successfully
+
+  worker-default:
+    <<: *backend_defaults
+    restart: unless-stopped
+    command: bench worker --queue default
+    depends_on:
+      create-site:
+        condition: service_completed_successfully
+
+  worker-long:
+    <<: *backend_defaults
+    restart: unless-stopped
+    command: bench worker --queue long
+    depends_on:
+      create-site:
+        condition: service_completed_successfully
+
+volumes:
+  db-data:
+  sites:
+  logs:
