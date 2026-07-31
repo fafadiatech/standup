@@ -31,19 +31,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    if (!mounted) return;
-
-    final success = ref.read(authProvider.notifier).login(
+    final success = await ref.read(authProvider.notifier).login(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
 
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
     if (!success) {
-      setState(() => _isLoading = false);
+      final error =
+          ref.read(authProvider).errorMessage ?? AppStrings.loginFailed;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.loginFailed)),
+        SnackBar(content: Text(error)),
       );
       return;
     }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Allows cleartext HTTP to the Android emulator host alias (10.0.2.2)
+  so the app can reach ERPNext running on the dev machine via Docker.
+  Production builds should use HTTPS and this entry can be removed.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

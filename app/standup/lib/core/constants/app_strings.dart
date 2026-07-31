@@ -16,7 +16,7 @@ class AppStrings {
   static const String passwordRequired = 'Password is required';
   static const String loginFailed = 'Invalid credentials. Try again.';
   static const String loginHelpText =
-      'Use sarah@company.com or pantry@company.com with password123';
+      'Contact your administrator if you need access.';
 
   // Home
   static const String greeting = 'Hi';
