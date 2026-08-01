@@ -138,8 +138,9 @@ services:
                 repaired.extend(["erpnext", "standup"])
             else:
                 repaired.append(a)
-        if "standup" not in repaired:
-            repaired.append("standup")
+        for name in ("hrms", "standup"):
+            if name not in repaired:
+                repaired.append(name)
         seen, out = set(), []
         for a in repaired:
             if a not in seen:
@@ -151,16 +152,30 @@ services:
         apps_json = Path("/home/frappe/frappe-bench/sites/apps.json")
         data = json.loads(apps_json.read_text()) if apps_json.exists() else {}
         data.pop("erpnextstandup", None)
+        next_idx = max((a.get("idx", 0) for a in data.values()), default=0) + 1
+        changed = False
+        if "hrms" not in data:
+            data["hrms"] = {
+                "is_repo": True,
+                "resolution": {"commit_hash": None, "branch": "version-15"},
+                "required": [],
+                "idx": next_idx,
+                "version": "0.0.1",
+            }
+            next_idx += 1
+            changed = True
         if "standup" not in data:
             data["standup"] = {
                 "is_repo": False,
                 "resolution": {"commit_hash": None, "branch": None},
                 "required": [],
-                "idx": max((a.get("idx", 0) for a in data.values()), default=0) + 1,
+                "idx": next_idx,
                 "version": "0.1.0",
             }
+            changed = True
+        if changed:
             apps_json.write_text(json.dumps(data, indent=4))
-            print("standup added to apps.json", flush=True)
+            print("apps.json updated", flush=True)
         PYEOF
 
         SITE=$${SITE_NAME:-site1.localhost}
@@ -172,16 +187,29 @@ services:
             --admin-password="$${ADMIN_PASSWORD:-admin}" \
             --db-root-password="$${DB_ROOT_PASSWORD:-admin}" \
             --install-app erpnext \
+            --install-app hrms \
             --install-app standup \
             --set-default \
             "$$SITE"
         else
-          echo "Site $$SITE already exists — installing standup (if needed) and migrating ..."
+          echo "Site $$SITE already exists — installing apps (if needed) and migrating ..."
+          bench --site "$$SITE" install-app hrms
           bench --site "$$SITE" install-app standup
           bench --site "$$SITE" migrate
         fi
 
         echo "Loading sample data (idempotent) ..."
+        # Fresh sites skip the desk setup wizard. Bootstrap ERPNext fixtures +
+        # company, then Frappe Gender/Salutation fixtures, before seeding.
+        COMPANY_COUNT=$$(bench --site "$$SITE" mariadb -Ne "SELECT COUNT(*) FROM tabCompany" 2>/dev/null || echo 0)
+        if [ "$$COMPANY_COUNT" = "0" ]; then
+          echo "No Company found — running ERPNext setup_complete ..."
+          bench --site "$$SITE" execute erpnext.setup.setup_wizard.setup_wizard.setup_complete --args "[frappe._dict({'language':'English','country':'India','timezone':'Asia/Kolkata','currency':'INR','company_name':'Fafadia Tech','company_abbr':'FT','chart_of_accounts':'India - Chart of Accounts','domain':'Services','fy_start_date':'2026-04-01','fy_end_date':'2027-03-31'})]"
+        fi
+        bench --site "$$SITE" execute frappe.desk.page.setup_wizard.install_fixtures.install
+        # Must run via bench (cwd = sites/) — frappe's file logger uses paths
+        # relative to cwd (../logs and <site>/logs). Raw python from the bench
+        # root resolves those to the wrong places and raises FileNotFoundError.
         bench --site "$$SITE" execute standup.scripts.setup_sample_data.run
     environment:
       SITE_NAME: ${SITE_NAME:-site1.localhost}
@@ -190,11 +218,11 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      # Pick up local sample-data / script changes without rebuilding the image.
+      - ./standup:/home/frappe/frappe-bench/apps/standup/standup
     depends_on:
       configurator:
         condition: service_completed_successfully
-
-  # ─── Application services ────────────────────────────────────────────────
 
   backend:
     <<: *backend_defaults
