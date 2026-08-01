@@ -10,7 +10,7 @@ class HolidaysScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final holidays = ref.watch(holidaysProvider);
+    final holidaysAsync = ref.watch(holidaysProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -28,15 +28,47 @@ class HolidaysScreen extends ConsumerWidget {
         elevation: 0,
         scrolledUnderElevation: 1,
       ),
-      body: holidays.isEmpty
-          ? const _EmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              itemCount: holidays.length,
-              itemBuilder: (context, index) {
-                return HolidayListItem(holiday: holidays[index]);
-              },
+      body: holidaysAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.cloud_off_outlined,
+                  size: 48,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  error.toString(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => ref.invalidate(holidaysProvider),
+                  child: const Text('Retry'),
+                ),
+              ],
             ),
+          ),
+        ),
+        data: (holidays) => holidays.isEmpty
+            ? const _EmptyState()
+            : ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                itemCount: holidays.length,
+                itemBuilder: (context, index) {
+                  return HolidayListItem(holiday: holidays[index]);
+                },
+              ),
+      ),
     );
   }
 }

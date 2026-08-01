@@ -20,7 +20,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
     final achievements = ref.watch(achievementsProvider);
-    final holidays = ref.watch(holidaysProvider);
+    final holidaysAsync = ref.watch(holidaysProvider);
     final meetings = ref.watch(weeklyMeetingsProvider);
     final events = ref.watch(upcomingEventsProvider);
     final openTaskCount = ref
@@ -76,8 +76,13 @@ class HomeScreen extends ConsumerWidget {
                   const SizedBox(height: 24),
                   UpcomingEventsSection(events: events),
                   const SizedBox(height: 16),
-                  if (holidays.isNotEmpty)
-                    HolidaysBanner(holiday: holidays.first),
+                  holidaysAsync.when(
+                    data: (holidays) => holidays.isNotEmpty
+                        ? HolidaysBanner(holiday: holidays.first)
+                        : const SizedBox.shrink(),
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, s) => const SizedBox.shrink(),
+                  ),
                   const SizedBox(height: 16),
                 ]),
               ),

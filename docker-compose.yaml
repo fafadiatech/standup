@@ -180,6 +180,9 @@ services:
           bench --site "$$SITE" install-app standup
           bench --site "$$SITE" migrate
         fi
+
+        echo "Loading sample data (idempotent) ..."
+        bench --site "$$SITE" execute standup.scripts.setup_sample_data.run
     environment:
       SITE_NAME: ${SITE_NAME:-site1.localhost}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}

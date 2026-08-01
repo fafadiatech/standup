@@ -5,6 +5,8 @@ import '../../../data/models/event_model.dart';
 import '../../../data/models/achievement_model.dart';
 import '../../../data/models/holiday_model.dart';
 import '../../../data/mock/mock_data.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/holiday_service.dart';
 import '../../auth/providers/auth_provider.dart';
 
 final currentUserProvider = Provider<UserModel>((ref) {
@@ -15,8 +17,13 @@ final achievementsProvider = Provider<List<AchievementModel>>((ref) {
   return MockData.achievements;
 });
 
-final holidaysProvider = Provider<List<HolidayModel>>((ref) {
-  return MockData.upcomingHolidays;
+final _holidayServiceProvider = Provider<HolidayService>((ref) {
+  return HolidayService(AuthService());
+});
+
+final holidaysProvider = FutureProvider<List<HolidayModel>>((ref) {
+  final service = ref.read(_holidayServiceProvider);
+  return service.getHolidays();
 });
 
 final weeklyMeetingsProvider = Provider<List<MeetingModel>>((ref) {

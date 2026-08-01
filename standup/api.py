@@ -1,7 +1,9 @@
 """
-standup/api/auth.py
-───────────────────
-Mobile authentication endpoints for the Flutter client.
+standup/api.py
+──────────────
+All mobile API endpoints for the Flutter client.
+
+Endpoint base path: /api/method/standup.api.<function>
 
 Authentication flow
 ───────────────────
@@ -24,7 +26,15 @@ from frappe import _
 from frappe.utils.password import check_password
 
 
-# ─── Helpers ─────────────────────────────────────────────────────────────────
+# ─── Private helpers ─────────────────────────────────────────────────────────
+
+def _require_auth() -> str:
+    """Return the current user or raise AuthenticationError for guests."""
+    user = frappe.session.user
+    if user == "Guest":
+        frappe.throw(_("Not authenticated."), frappe.AuthenticationError)
+    return user
+
 
 def _get_or_create_token(user: str) -> dict[str, str]:
     """Return the existing api_key/api_secret for *user*, generating
@@ -56,7 +66,7 @@ def _build_user_profile(user: str) -> dict:
     }
 
 
-# ─── Endpoints ───────────────────────────────────────────────────────────────
+# ─── Auth endpoints ──────────────────────────────────────────────────────────
 
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def mobile_login() -> dict:
@@ -90,12 +100,10 @@ def mobile_login() -> dict:
         frappe.local.login_manager.authenticate(usr, pwd)
         frappe.local.login_manager.post_login()
     except frappe.exceptions.AuthenticationError:
-        # Re-raise so Frappe converts it to a proper 401 JSON response.
         raise
 
     user = frappe.session.user
 
-    # Prevent guest / inactive accounts from obtaining tokens.
     if user in ("Guest", "Administrator"):
         frappe.throw(
             _("This account is not permitted to use the mobile app."),
@@ -118,13 +126,10 @@ def logout() -> dict:
     """
     Invalidate the current user's API token pair.
 
-    The client must send `Authorization: token <key>:<secret>`.
     After this call the stored credentials are cleared; the Flutter app
     should delete them from secure storage.
     """
-    user = frappe.session.user
-    if user == "Guest":
-        frappe.throw(_("Not authenticated."), frappe.AuthenticationError)
+    user = _require_auth()
 
     user_doc = frappe.get_doc("User", user)
     user_doc.api_key    = ""
@@ -141,12 +146,9 @@ def logout() -> dict:
 def me() -> dict:
     """
     Return the authenticated user's profile.
-    Useful as a token-validation ping from the Flutter startup screen.
+    Used as a token-validation ping from the Flutter startup screen.
     """
-    user = frappe.session.user
-    if user == "Guest":
-        frappe.throw(_("Not authenticated."), frappe.AuthenticationError)
-
+    user = _require_auth()
     return {"status": "success", "user": _build_user_profile(user)}
 
 
@@ -156,9 +158,7 @@ def refresh_token() -> dict:
     Rotate the API token pair.
     Call this periodically or after a suspected credential leak.
     """
-    user = frappe.session.user
-    if user == "Guest":
-        frappe.throw(_("Not authenticated."), frappe.AuthenticationError)
+    user = _require_auth()
 
     user_doc = frappe.get_doc("User", user)
     user_doc.api_key    = frappe.generate_hash(length=15)
@@ -170,4 +170,56 @@ def refresh_token() -> dict:
         "status":     "success",
         "api_key":    user_doc.api_key,
         "api_secret": user_doc.get_password("api_secret"),
+    }
+
+
+# ─── Holiday endpoints ───────────────────────────────────────────────────────
+
+@frappe.whitelist(methods=["GET"])
+def get_holidays(list_name: str = "Public Holidays") -> dict:
+    """
+    Return all holidays from the given Holiday List, sorted by date.
+
+    Query params:
+        list_name  – name of the Holiday List doc (default: "Public Holidays")
+
+    Response 200:
+        {
+          "status":    "success",
+          "list_name": "Public Holidays",
+          "holidays": [
+            { "id": "...", "name": "Republic Day", "date": "2026-01-26" },
+            ...
+          ]
+        }
+
+    Raises frappe.AuthenticationError (HTTP 401) when not logged in.
+    Raises frappe.DoesNotExistError   (HTTP 404) when the list is not found.
+    """
+    _require_auth()
+
+    if not frappe.db.exists("Holiday List", list_name):
+        frappe.throw(
+            _("Holiday List '{0}' does not exist.").format(list_name),
+            frappe.DoesNotExistError,
+        )
+
+    holiday_list = frappe.get_doc("Holiday List", list_name)
+
+    holidays = [
+        {
+            "id":   row.name,
+            "name": row.description or "",
+            "date": str(row.holiday_date),
+        }
+        for row in holiday_list.holidays
+        if not row.weekly_off   # exclude regular weekly-off entries
+    ]
+
+    holidays.sort(key=lambda h: h["date"])
+
+    return {
+        "status":    "success",
+        "list_name": list_name,
+        "holidays":  holidays,
     }
