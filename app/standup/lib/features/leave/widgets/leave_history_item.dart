@@ -9,12 +9,7 @@ class LeaveHistoryItem extends StatelessWidget {
 
   const LeaveHistoryItem({super.key, required this.record});
 
-  String get _typeLabel => switch (record.type) {
-        LeaveType.paid => 'Paid leave',
-        LeaveType.unpaid => 'Unpaid leave',
-        LeaveType.sick => 'Sick leave',
-        LeaveType.casual => 'Casual leave',
-      };
+  String get _typeLabel => record.leaveType;
 
   @override
   Widget build(BuildContext context) {

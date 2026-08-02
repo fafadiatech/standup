@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../data/models/leave_model.dart';
 import '../providers/leave_provider.dart';
 
 class ApplyLeaveScreen extends ConsumerStatefulWidget {
@@ -15,9 +14,10 @@ class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
 
-  LeaveType _selectedType = LeaveType.paid;
+  String? _selectedType;
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now();
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -49,30 +49,51 @@ class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
       '${date.month.toString().padLeft(2, '0')} / '
       '${date.year}';
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a leave type.')),
+      );
+      return;
+    }
 
-    final record = LeaveRecord(
-      id: 'lv-${DateTime.now().millisecondsSinceEpoch}',
-      type: _selectedType,
-      status: LeaveStatus.pending,
-      startDate: _startDate,
-      endDate: _endDate,
-      reason: _reasonController.text.trim().isEmpty
-          ? null
-          : _reasonController.text.trim(),
-    );
+    setState(() => _isSubmitting = true);
 
-    ref.read(leaveProvider.notifier).addLeaveRequest(record);
+    final reason = _reasonController.text.trim();
+    final success = await ref.read(leaveProvider.notifier).applyLeave(
+          leaveType: _selectedType!,
+          startDate: _startDate,
+          endDate: _endDate,
+          reason: reason.isEmpty ? null : reason,
+        );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Leave request submitted successfully')),
-    );
-    Navigator.of(context).pop();
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Leave request submitted successfully.')),
+      );
+      Navigator.of(context).pop();
+    } else {
+      final error =
+          ref.read(leaveProvider).error ?? 'Failed to submit leave request.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final leaveTypes = ref.watch(leaveProvider).leaveTypes;
+
+    // Pre-select the first type once loaded.
+    if (_selectedType == null && leaveTypes.isNotEmpty) {
+      _selectedType = leaveTypes.first;
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -88,25 +109,27 @@ class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _SectionLabel(label: 'Leave type'),
+              const _SectionLabel(label: 'Leave type'),
               const SizedBox(height: 8),
-              DropdownButtonFormField<LeaveType>(
-                initialValue: _selectedType,
-                decoration: _inputDecoration(null),
-                items: const [
-                  DropdownMenuItem(
-                      value: LeaveType.paid, child: Text('Paid leave')),
-                  DropdownMenuItem(
-                      value: LeaveType.unpaid, child: Text('Unpaid leave')),
-                  DropdownMenuItem(
-                      value: LeaveType.sick, child: Text('Sick leave')),
-                  DropdownMenuItem(
-                      value: LeaveType.casual, child: Text('Casual leave')),
-                ],
-                onChanged: (v) {
-                  if (v != null) setState(() => _selectedType = v);
-                },
-              ),
+              leaveTypes.isEmpty
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : DropdownButtonFormField<String>(
+                      initialValue: _selectedType,
+                      decoration: _inputDecoration(null),
+                      items: leaveTypes
+                          .map(
+                            (t) => DropdownMenuItem(value: t, child: Text(t)),
+                          )
+                          .toList(),
+                      onChanged: (v) {
+                        if (v != null) setState(() => _selectedType = v);
+                      },
+                    ),
               const SizedBox(height: 20),
               Row(
                 children: [
@@ -114,7 +137,7 @@ class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _SectionLabel(label: 'From'),
+                        const _SectionLabel(label: 'From'),
                         const SizedBox(height: 8),
                         _DateField(
                           value: _formatDate(_startDate),
@@ -128,7 +151,7 @@ class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _SectionLabel(label: 'To'),
+                        const _SectionLabel(label: 'To'),
                         const SizedBox(height: 8),
                         _DateField(
                           value: _formatDate(_endDate),
@@ -140,7 +163,7 @@ class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              _SectionLabel(label: 'Reason (optional)'),
+              const _SectionLabel(label: 'Reason (optional)'),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _reasonController,
@@ -149,8 +172,14 @@ class _ApplyLeaveScreenState extends ConsumerState<ApplyLeaveScreen> {
               ),
               const SizedBox(height: 32),
               ElevatedButton(
-                onPressed: _submit,
-                child: const Text('Submit Request'),
+                onPressed: _isSubmitting ? null : _submit,
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Submit Request'),
               ),
             ],
           ),

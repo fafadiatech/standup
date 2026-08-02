@@ -238,51 +238,57 @@ class MockData {
 
   // --- Leave ---
   static const LeaveSummary leaveSummary = LeaveSummary(
-    total: 12,
-    paid: 2,
-    unpaid: 0,
-    pending: 10,
+    total: 5,
+    approved: 3,
+    pending: 1,
+    rejected: 1,
+    balances: [],
   );
 
   static final List<LeaveRecord> leaveHistory = [
     LeaveRecord(
       id: 'lv-1',
-      type: LeaveType.paid,
+      leaveType: 'Sick Leave',
       status: LeaveStatus.pending,
       startDate: DateTime(2024, 11, 23),
       endDate: DateTime(2024, 11, 23),
+      totalDays: 1,
       reason: 'Fever and cold, need rest.',
     ),
     LeaveRecord(
       id: 'lv-2',
-      type: LeaveType.paid,
+      leaveType: 'Privilege Leave',
       status: LeaveStatus.rejected,
       startDate: DateTime(2024, 7, 12),
       endDate: DateTime(2024, 7, 13),
+      totalDays: 2,
       reason: 'Attending a family wedding ceremony.',
     ),
     LeaveRecord(
       id: 'lv-3',
-      type: LeaveType.unpaid,
+      leaveType: 'Sick Leave',
       status: LeaveStatus.approved,
       startDate: DateTime(2024, 4, 4),
       endDate: DateTime(2024, 4, 5),
+      totalDays: 2,
       reason: 'Medical procedure follow-up.',
     ),
     LeaveRecord(
       id: 'lv-4',
-      type: LeaveType.unpaid,
+      leaveType: 'Privilege Leave',
       status: LeaveStatus.approved,
       startDate: DateTime(2024, 1, 1),
       endDate: DateTime(2024, 1, 1),
+      totalDays: 1,
       reason: 'New Year recovery.',
     ),
     LeaveRecord(
       id: 'lv-5',
-      type: LeaveType.casual,
+      leaveType: 'Casual Leave',
       status: LeaveStatus.approved,
       startDate: DateTime(2023, 10, 20),
       endDate: DateTime(2023, 10, 21),
+      totalDays: 2,
       reason: 'Personal errands.',
     ),
   ];

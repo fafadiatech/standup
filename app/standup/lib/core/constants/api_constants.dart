@@ -20,6 +20,16 @@ class ApiConstants {
   static const String getHolidays =
       '/api/method/standup.api.get_holidays';
 
+  // Leave endpoints
+  static const String getLeaveTypes =
+      '/api/method/standup.api.get_leave_types';
+  static const String getLeaveBalance =
+      '/api/method/standup.api.get_leave_balance';
+  static const String getLeaveHistory =
+      '/api/method/standup.api.get_leave_history';
+  static const String applyLeave =
+      '/api/method/standup.api.apply_leave';
+
   // Secure-storage keys
   static const String keyApiKey    = 'api_key';
   static const String keyApiSecret = 'api_secret';
