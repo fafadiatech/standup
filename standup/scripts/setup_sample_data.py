@@ -26,7 +26,7 @@ Re-running this script on an already-configured site is a no-op.
 from __future__ import annotations
 
 import frappe
-from frappe.utils import date_diff
+from frappe.utils import date_diff, now_datetime
 from frappe.utils.password import update_password
 
 
@@ -129,6 +129,53 @@ _LEAVE_APPLICATIONS = [
         "bob.smith@example.com", "Privilege Leave",
         "2026-10-12", "2026-10-16",
         "Rejected", "Insufficient notice period",
+    ),
+]
+
+_PANTRY_ROLE = "Pantry"
+
+_PANTRY_USER = (
+    "pantry.staff@example.com", "Pantry", "Staff", [_PANTRY_ROLE],
+)
+
+# (item_name, item_type, emoji)
+_PANTRY_CATALOG = [
+    ("Sandwich",    "snack", "🥪"),
+    ("Cookies",     "snack", "🍪"),
+    ("Samosa",      "snack", "🥟"),
+    ("Muffin",      "snack", "🧁"),
+    ("Tea",         "drink", "🍵"),
+    ("Coffee",      "drink", "☕"),
+    ("Lemon Juice", "drink", "🍋"),
+    ("Buttermilk",  "drink", "🥛"),
+]
+
+# (employee_email, status, location, notes, items[(item_name, qty)], handled_by_email)
+_SNACK_REQUESTS = [
+    (
+        "alice.johnson@example.com", "Completed", "Desk", None,
+        [("Coffee", 1), ("Muffin", 1)],
+        "pantry.staff@example.com",
+    ),
+    (
+        "bob.smith@example.com", "Accepted", "Conference Room", "No sugar please",
+        [("Tea", 2)],
+        "pantry.staff@example.com",
+    ),
+    (
+        "carol.davis@example.com", "Pending", "Cabin 1", None,
+        [("Samosa", 2), ("Lemon Juice", 1)],
+        None,
+    ),
+    (
+        "david.lee@example.com", "Rejected", "Desk", None,
+        [("Sandwich", 1)],
+        "pantry.staff@example.com",
+    ),
+    (
+        "alice.johnson@example.com", "Pending", None, "Extra napkins please",
+        [("Cookies", 3)],
+        None,
     ),
 ]
 
@@ -428,6 +475,110 @@ def _setup_leave_applications() -> None:
         _tag(f"Leave Application {emp_id} / {lt_name} {from_date}→{to_date} [{status}]", "created")
 
 
+def _setup_pantry_role() -> None:
+    if frappe.db.exists("Role", _PANTRY_ROLE):
+        _tag(f"Role '{_PANTRY_ROLE}'", "skip")
+        return
+    frappe.get_doc({"doctype": "Role", "role_name": _PANTRY_ROLE}).insert(ignore_permissions=True)
+    frappe.db.commit()
+    _tag(f"Role '{_PANTRY_ROLE}'", "created")
+
+
+def _setup_pantry_user() -> None:
+    email, first, last, roles = _PANTRY_USER
+    if frappe.db.exists("User", email):
+        _tag(f"User '{email}'", "skip")
+        return
+    user = frappe.get_doc({
+        "doctype":            "User",
+        "email":              email,
+        "first_name":         first,
+        "last_name":          last,
+        "full_name":          f"{first} {last}",
+        "enabled":            1,
+        "send_welcome_email": 0,
+        "roles":              [{"role": r} for r in roles],
+    })
+    user.insert(ignore_permissions=True)
+    update_password(email, _TEST_PASSWORD)
+    frappe.db.commit()
+    _tag(f"User '{email}' (pantry staff)", "created")
+
+
+def _setup_pantry_catalog() -> None:
+    for item_name, item_type, emoji in _PANTRY_CATALOG:
+        if frappe.db.exists("Pantry Catalog Item", item_name):
+            _tag(f"Pantry Catalog Item '{item_name}'", "skip")
+            continue
+        frappe.get_doc({
+            "doctype":   "Pantry Catalog Item",
+            "item_name": item_name,
+            "item_type": item_type,
+            "emoji":     emoji,
+            "is_active": 1,
+        }).insert(ignore_permissions=True)
+        frappe.db.commit()
+        _tag(f"Pantry Catalog Item '{item_name}' ({item_type} {emoji})", "created")
+
+
+def _setup_snack_requests() -> None:
+    pantry_user_email = _PANTRY_USER[0]
+
+    for email, status, location, notes, items, handled_by_email in _SNACK_REQUESTS:
+        emp_id = _get_employee_id(email)
+        if not emp_id:
+            print(f"  [warn] Employee not found for '{email}', skipping snack request.", flush=True)
+            continue
+
+        # Use a fixed requested_at per email+status to make the guard deterministic
+        guard_key = f"{emp_id}-{status}-{','.join(i[0] for i in items)}"
+        existing = frappe.db.get_value(
+            "Snack Request",
+            {"employee": emp_id, "status": status, "notes": notes or ""},
+            "name",
+        )
+        if existing:
+            _tag(f"Snack Request {emp_id} [{status}]", "skip")
+            continue
+
+        now = now_datetime()
+        doc = frappe.get_doc({
+            "doctype":       "Snack Request",
+            "employee":      emp_id,
+            "employee_name": frappe.db.get_value("Employee", emp_id, "employee_name"),
+            "status":        status,
+            "location":      location,
+            "notes":         notes,
+            "requested_at":  now,
+            "items": [
+                {"item_name": name, "item_type": _item_type(name), "quantity": qty}
+                for name, qty in items
+            ],
+        })
+
+        if handled_by_email:
+            doc.handled_by = handled_by_email
+            doc.handled_at = now
+
+        if status == "Completed":
+            doc.completed_at = now
+
+        if status == "Rejected":
+            doc.rejection_reason = "Unavailable at this time"
+
+        doc.insert(ignore_permissions=True)
+        frappe.db.commit()
+        _tag(f"Snack Request {emp_id} [{status}] — {', '.join(n for n, _ in items)}", "created")
+
+
+def _item_type(item_name: str) -> str:
+    """Look up item_type from the catalog fixture data."""
+    for name, itype, _ in _PANTRY_CATALOG:
+        if name == item_name:
+            return itype
+    return "snack"
+
+
 # ─── Entry point ─────────────────────────────────────────────────────────────
 
 def run() -> None:
@@ -448,5 +599,10 @@ def run() -> None:
     _setup_users_and_employees(company)
     _setup_leave_allocations(company)
     _setup_leave_applications()
+
+    _setup_pantry_role()
+    _setup_pantry_user()
+    _setup_pantry_catalog()
+    _setup_snack_requests()
 
     print("=== Done ===", flush=True)

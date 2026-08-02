@@ -21,9 +21,11 @@ purpose-built for headless/mobile clients.
 
 from __future__ import annotations
 
+import json
+
 import frappe
 from frappe import _
-from frappe.utils import getdate
+from frappe.utils import getdate, now_datetime
 from frappe.utils.password import check_password
 
 
@@ -455,3 +457,272 @@ def apply_leave() -> dict:
         "id":      leave_app.name,
         "message": _("Leave application submitted successfully."),
     }
+
+
+# ─── Pantry helpers ──────────────────────────────────────────────────────────
+
+def _require_pantry_role() -> str:
+    """Return the current user or raise PermissionError if they lack the Pantry role."""
+    user = _require_auth()
+    roles = frappe.get_roles(user)
+    if not any(r.lower() == "pantry" for r in roles):
+        frappe.throw(_("Only Pantry staff can perform this action."), frappe.PermissionError)
+    return user
+
+
+def _serialize_request(doc) -> dict:
+    """Convert a Snack Request document to the mobile API payload format."""
+    return {
+        "id":               doc.name,
+        "employee":         doc.employee,
+        "employee_name":    doc.employee_name or "",
+        "status":           (doc.status or "Pending").lower(),
+        "location":         doc.location or None,
+        "notes":            doc.notes or None,
+        "requested_at":     str(doc.requested_at) if doc.requested_at else None,
+        "handled_at":       str(doc.handled_at) if doc.handled_at else None,
+        "completed_at":     str(doc.completed_at) if doc.completed_at else None,
+        "rejection_reason": doc.rejection_reason or None,
+        "items": [
+            {
+                "item_name": row.item_name,
+                "item_type": row.item_type,
+                "quantity":  row.quantity,
+            }
+            for row in (doc.items or [])
+        ],
+    }
+
+
+# ─── Pantry endpoints ────────────────────────────────────────────────────────
+
+@frappe.whitelist(methods=["GET"])
+def get_pantry_catalog() -> dict:
+    """
+    Return all active pantry catalog items, ordered by type then name.
+
+    Response:
+        { status, items: [{name, item_type, emoji}, ...] }
+    """
+    _require_auth()
+
+    rows = frappe.get_all(
+        "Pantry Catalog Item",
+        filters={"is_active": 1},
+        fields=["item_name as name", "item_type", "emoji"],
+        order_by="item_type asc, item_name asc",
+    )
+    return {"status": "success", "items": rows}
+
+
+@frappe.whitelist(methods=["POST"])
+def create_snack_request() -> dict:
+    """
+    Employee places a new pantry order.
+
+    Request body:
+        items   – JSON string: [{item_name, item_type, quantity}, ...]
+        location – optional delivery location
+        notes   – optional free-text note
+
+    Response:
+        { status, id, message }
+    """
+    user     = _require_auth()
+    employee = _get_employee(user)
+
+    data = frappe.local.form_dict
+
+    raw_items = data.get("items")
+    if not raw_items:
+        frappe.throw(_("items is required."), frappe.ValidationError)
+
+    try:
+        items = json.loads(raw_items) if isinstance(raw_items, str) else raw_items
+    except (json.JSONDecodeError, TypeError):
+        frappe.throw(_("items must be valid JSON."), frappe.ValidationError)
+
+    if not items:
+        frappe.throw(_("At least one item is required."), frappe.ValidationError)
+
+    employee_name = frappe.db.get_value("Employee", employee, "employee_name")
+
+    doc = frappe.get_doc({
+        "doctype":       "Snack Request",
+        "employee":      employee,
+        "employee_name": employee_name,
+        "status":        "Pending",
+        "location":      (data.get("location") or "").strip() or None,
+        "notes":         (data.get("notes") or "").strip() or None,
+        "requested_at":  now_datetime(),
+        "items": [
+            {
+                "item_name": row.get("item_name", ""),
+                "item_type": row.get("item_type", "snack"),
+                "quantity":  int(row.get("quantity", 1)),
+            }
+            for row in items
+        ],
+    })
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {
+        "status":  "success",
+        "id":      doc.name,
+        "message": _("Your pantry request has been submitted."),
+    }
+
+
+@frappe.whitelist(methods=["GET"])
+def get_my_snack_requests() -> dict:
+    """
+    Return the current employee's own snack requests, newest first (limit 50).
+
+    Response:
+        { status, requests: [...] }
+    """
+    user     = _require_auth()
+    employee = _get_employee(user)
+
+    names = frappe.get_all(
+        "Snack Request",
+        filters={"employee": employee},
+        fields=["name"],
+        order_by="requested_at desc",
+        limit=50,
+    )
+    requests = [_serialize_request(frappe.get_doc("Snack Request", r.name)) for r in names]
+    return {"status": "success", "requests": requests}
+
+
+@frappe.whitelist(methods=["GET"])
+def get_all_snack_requests() -> dict:
+    """
+    Pantry staff fetches all requests, optionally filtered by status.
+
+    Query params:
+        status – optional: Pending | Accepted | Rejected | Completed
+
+    Response:
+        { status, requests: [...] }
+    """
+    _require_pantry_role()
+
+    status_filter = (frappe.local.form_dict.get("status") or "").strip() or None
+    filters = {"status": status_filter} if status_filter else {}
+
+    names = frappe.get_all(
+        "Snack Request",
+        filters=filters,
+        fields=["name"],
+        order_by="requested_at desc",
+        limit=200,
+    )
+    requests = [_serialize_request(frappe.get_doc("Snack Request", r.name)) for r in names]
+    return {"status": "success", "requests": requests}
+
+
+@frappe.whitelist(methods=["POST"])
+def accept_snack_request() -> dict:
+    """
+    Pantry staff accepts a Pending request.
+
+    Request body:
+        request_id – name of the Snack Request doc
+
+    Response:
+        { status, message }
+    """
+    user = _require_pantry_role()
+
+    request_id = (frappe.local.form_dict.get("request_id") or "").strip()
+    if not request_id:
+        frappe.throw(_("request_id is required."), frappe.ValidationError)
+
+    doc = frappe.get_doc("Snack Request", request_id)
+    if doc.status != "Pending":
+        frappe.throw(
+            _("Only Pending requests can be accepted. Current status: {0}").format(doc.status),
+            frappe.ValidationError,
+        )
+
+    doc.status     = "Accepted"
+    doc.handled_by = user
+    doc.handled_at = now_datetime()
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"status": "success", "message": _("Request accepted.")}
+
+
+@frappe.whitelist(methods=["POST"])
+def reject_snack_request() -> dict:
+    """
+    Pantry staff rejects a Pending request with a reason.
+
+    Request body:
+        request_id       – name of the Snack Request doc
+        rejection_reason – required explanation
+
+    Response:
+        { status, message }
+    """
+    user = _require_pantry_role()
+
+    data      = frappe.local.form_dict
+    request_id       = (data.get("request_id") or "").strip()
+    rejection_reason = (data.get("rejection_reason") or "").strip()
+
+    if not request_id:
+        frappe.throw(_("request_id is required."), frappe.ValidationError)
+    if not rejection_reason:
+        frappe.throw(_("rejection_reason is required."), frappe.ValidationError)
+
+    doc = frappe.get_doc("Snack Request", request_id)
+    if doc.status != "Pending":
+        frappe.throw(
+            _("Only Pending requests can be rejected. Current status: {0}").format(doc.status),
+            frappe.ValidationError,
+        )
+
+    doc.status           = "Rejected"
+    doc.handled_by       = user
+    doc.handled_at       = now_datetime()
+    doc.rejection_reason = rejection_reason
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"status": "success", "message": _("Request rejected.")}
+
+
+@frappe.whitelist(methods=["POST"])
+def complete_snack_request() -> dict:
+    """
+    Pantry staff marks an Accepted request as Completed (delivered).
+
+    Request body:
+        request_id – name of the Snack Request doc
+
+    Response:
+        { status, message }
+    """
+    _require_pantry_role()
+
+    request_id = (frappe.local.form_dict.get("request_id") or "").strip()
+    if not request_id:
+        frappe.throw(_("request_id is required."), frappe.ValidationError)
+
+    doc = frappe.get_doc("Snack Request", request_id)
+    if doc.status != "Accepted":
+        frappe.throw(
+            _("Only Accepted requests can be completed. Current status: {0}").format(doc.status),
+            frappe.ValidationError,
+        )
+
+    doc.status       = "Completed"
+    doc.completed_at = now_datetime()
+    doc.save(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"status": "success", "message": _("Request marked as completed.")}
