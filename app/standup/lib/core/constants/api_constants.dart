@@ -46,6 +46,12 @@ class ApiConstants {
   static const String completeSnackRequest =
       '/api/method/standup.api.complete_snack_request';
 
+  // Board endpoints
+  static const String getLeaderboard =
+      '/api/method/standup.api.get_leaderboard';
+  static const String getEmployeeOfMonth =
+      '/api/method/standup.api.get_employee_of_month';
+
   // Secure-storage keys
   static const String keyApiKey    = 'api_key';
   static const String keyApiSecret = 'api_secret';

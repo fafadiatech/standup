@@ -1,11 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/board_service.dart';
 import '../../../data/models/leaderboard_model.dart';
-import '../../../data/mock/mock_data.dart';
 
-final employeeOfMonthProvider = Provider<EmployeeOfMonth>(
-  (_) => MockData.employeeOfMonth,
-);
+final _boardServiceProvider = Provider<BoardService>((ref) {
+  return BoardService(AuthService());
+});
 
-final leaderboardProvider = Provider<List<LeaderboardEntry>>(
-  (_) => MockData.leaderboard,
-);
+final leaderboardProvider = FutureProvider<List<LeaderboardEntry>>((ref) {
+  return ref.read(_boardServiceProvider).getLeaderboard();
+});
+
+final employeeOfMonthProvider = FutureProvider<EmployeeOfMonth?>((ref) {
+  return ref.read(_boardServiceProvider).getEmployeeOfMonth();
+});

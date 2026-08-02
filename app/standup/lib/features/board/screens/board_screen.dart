@@ -12,8 +12,8 @@ class BoardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final employeeOfMonth = ref.watch(employeeOfMonthProvider);
-    final leaderboard = ref.watch(leaderboardProvider);
+    final employeeOfMonthAsync = ref.watch(employeeOfMonthProvider);
+    final leaderboardAsync = ref.watch(leaderboardProvider);
 
     return AppScaffold(
       child: Scaffold(
@@ -46,9 +46,23 @@ class BoardScreen extends ConsumerWidget {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
           children: [
-            // Employee of the month
-            EmployeeOfMonthCard(employee: employeeOfMonth),
-            const SizedBox(height: 28),
+            // Employee of the Month
+            employeeOfMonthAsync.when(
+              data: (employee) {
+                if (employee == null) return const SizedBox.shrink();
+                return Column(
+                  children: [
+                    EmployeeOfMonthCard(employee: employee),
+                    const SizedBox(height: 28),
+                  ],
+                );
+              },
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (err, st) => const SizedBox.shrink(),
+            ),
 
             // Column headers
             const Row(
@@ -78,13 +92,28 @@ class BoardScreen extends ConsumerWidget {
             const Divider(color: AppColors.divider),
 
             // Ranked list
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: leaderboard.length,
-              separatorBuilder: (_, _) =>
-                  const Divider(height: 1, color: AppColors.divider),
-              itemBuilder: (_, i) => LeaderboardRow(entry: leaderboard[i]),
+            leaderboardAsync.when(
+              data: (leaderboard) => ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: leaderboard.length,
+                separatorBuilder: (context, index) =>
+                    const Divider(height: 1, color: AppColors.divider),
+                itemBuilder: (_, i) => LeaderboardRow(entry: leaderboard[i]),
+              ),
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (err, _) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: Text(
+                    'Failed to load leaderboard.',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+              ),
             ),
           ],
         ),

@@ -65,7 +65,7 @@ class UserModel {
       email: (json['email'] as String?) ?? '',
       avatarInitials: initials,
       leaveBalance: 0,
-      energyPoints: 0,
+      energyPoints: (json['energy_points'] as num?)?.toInt() ?? 0,
       issueNumber: '-',
       issueName: '-',
       issueStatus: '-',
