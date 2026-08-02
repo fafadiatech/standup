@@ -16,4 +16,23 @@ class AchievementModel {
     required this.personInitials,
     required this.achievedDate,
   });
+
+  factory AchievementModel.fromJson(Map<String, dynamic> json) {
+    final name = (json['employee_name'] as String?) ?? '';
+    final initials = name
+        .split(' ')
+        .where((w) => w.isNotEmpty)
+        .take(2)
+        .map((w) => w[0].toUpperCase())
+        .join();
+    return AchievementModel(
+      id: (json['id'] as String?) ?? '',
+      badgeEmoji: (json['badge_emoji'] as String?) ?? '',
+      badgeTitle: (json['badge_title'] as String?) ?? '',
+      description: (json['description'] as String?) ?? '',
+      personName: name,
+      personInitials: initials,
+      achievedDate: (json['achieved_date'] as String?) ?? '',
+    );
+  }
 }

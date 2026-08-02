@@ -15,8 +15,9 @@ final currentUserProvider = Provider<UserModel>((ref) {
   return ref.watch(currentSessionUserProvider) ?? MockData.currentUser;
 });
 
-final achievementsProvider = Provider<List<AchievementModel>>((ref) {
-  return MockData.achievements;
+final achievementsProvider = FutureProvider<List<AchievementModel>>((ref) {
+  final service = ref.read(_homeServiceProvider);
+  return service.getAchievements();
 });
 
 final _holidayServiceProvider = Provider<HolidayService>((ref) {

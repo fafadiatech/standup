@@ -21,7 +21,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    final achievements = ref.watch(achievementsProvider);
+    final achievementsAsync = ref.watch(achievementsProvider);
     final holidaysAsync = ref.watch(holidaysProvider);
     final meetingsAsync = ref.watch(weeklyMeetingsProvider);
     final eventsAsync = ref.watch(upcomingEventsProvider);
@@ -74,7 +74,13 @@ class HomeScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  AchievementCarousel(achievements: achievements),
+                  achievementsAsync.when(
+                    data: (achievements) => achievements.isEmpty
+                        ? const SizedBox.shrink()
+                        : AchievementCarousel(achievements: achievements),
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, s) => const SizedBox.shrink(),
+                  ),
                   const SizedBox(height: 24),
                   meetingsAsync.when(
                     data: (meetings) => WeeklyMeetingsSection(meetings: meetings),

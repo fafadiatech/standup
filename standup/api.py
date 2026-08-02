@@ -987,3 +987,37 @@ def complete_snack_request() -> dict:
     frappe.db.commit()
 
     return {"status": "success", "message": _("Request marked as completed.")}
+
+
+@frappe.whitelist(methods=["GET"])
+def get_achievements() -> dict:
+    """
+    Return active Achievement records ordered by achieved_date descending.
+
+    Response:
+        { status, achievements: [ { id, badge_emoji, badge_title, description,
+                                     employee_name, achieved_date } ] }
+    """
+    _require_auth()
+
+    rows = frappe.get_all(
+        "Achievement",
+        filters={"is_active": 1},
+        fields=["name", "badge_emoji", "badge_title", "description",
+                "employee_name", "achieved_date"],
+        order_by="achieved_date desc",
+    )
+
+    achievements = [
+        {
+            "id":            r.name,
+            "badge_emoji":   r.badge_emoji or "",
+            "badge_title":   r.badge_title or "",
+            "description":   r.description or "",
+            "employee_name": r.employee_name or "",
+            "achieved_date": formatdate(r.achieved_date, "MMM d, yyyy") if r.achieved_date else "",
+        }
+        for r in rows
+    ]
+
+    return {"status": "success", "achievements": achievements}

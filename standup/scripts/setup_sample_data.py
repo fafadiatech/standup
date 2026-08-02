@@ -179,6 +179,45 @@ _UPCOMING_EVENTS = [
     ),
 ]
 
+# (employee_email, badge_emoji, badge_title, achieved_date, description)
+_ACHIEVEMENTS = [
+    (
+        "alice.johnson@example.com",
+        "🌅",
+        "Early Bird",
+        "2026-07-15",
+        "Consistently clocking in before 9 AM for the past month. Keep up the great habit!",
+    ),
+    (
+        "bob.smith@example.com",
+        "🤝",
+        "Team Player",
+        "2026-07-10",
+        "Went above and beyond to support teammates during the product launch sprint.",
+    ),
+    (
+        "carol.davis@example.com",
+        "⭐",
+        "Star Contributor",
+        "2026-06-28",
+        "Completed the HR policy revamp ahead of schedule and presented it to leadership.",
+    ),
+    (
+        "david.lee@example.com",
+        "🧩",
+        "Problem Solver",
+        "2026-06-20",
+        "Identified and resolved a critical product blocker that unblocked the entire team.",
+    ),
+    (
+        "alice.johnson@example.com",
+        "🏆",
+        "Mentor of the Month",
+        "2026-05-30",
+        "Mentored two junior engineers throughout the mobile integration project, helping them grow significantly.",
+    ),
+]
+
 _EMPLOYEE_ENERGY_POINTS = {
     "alice.johnson@example.com": 1723,
     "bob.smith@example.com":     1500,
@@ -716,6 +755,30 @@ def _setup_weekly_meetings() -> None:
         _tag(f"Weekly Meeting '{team_name}' ({recurrence} at {meeting_time})", "created")
 
 
+def _setup_achievements() -> None:
+    for email, badge_emoji, badge_title, achieved_date, description in _ACHIEVEMENTS:
+        emp_id = _get_employee_id(email)
+        if not emp_id:
+            print(f"  [warn] Employee not found for '{email}', skipping achievement.", flush=True)
+            continue
+
+        if frappe.db.exists("Achievement", {"employee": emp_id, "badge_title": badge_title, "achieved_date": achieved_date}):
+            _tag(f"Achievement '{badge_title}' for {emp_id}", "skip")
+            continue
+
+        frappe.get_doc({
+            "doctype":      "Achievement",
+            "badge_emoji":  badge_emoji,
+            "badge_title":  badge_title,
+            "employee":     emp_id,
+            "achieved_date": achieved_date,
+            "description":  description,
+            "is_active":    1,
+        }).insert(ignore_permissions=True)
+        frappe.db.commit()
+        _tag(f"Achievement '{badge_title}' for {emp_id} ({achieved_date})", "created")
+
+
 def _setup_upcoming_events() -> None:
     for title, event_date, location, description in _UPCOMING_EVENTS:
         if frappe.db.exists("Upcoming Event", {"title": title, "event_date": event_date}):
@@ -774,5 +837,6 @@ def run() -> None:
 
     _setup_weekly_meetings()
     _setup_upcoming_events()
+    _setup_achievements()
 
     print("=== Done ===", flush=True)
