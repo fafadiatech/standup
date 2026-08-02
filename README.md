@@ -38,6 +38,37 @@ A personalised daily briefing at a glance:
 
 ---
 
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><b>Home</b></td>
+    <td align="center"><b>Home (cont.)</b></td>
+    <td align="center"><b>Tasks</b></td>
+    <td align="center"><b>Holidays</b></td>
+  </tr>
+  <tr>
+    <td><img src="app/standup/screenshots/01.png" width="180"/></td>
+    <td><img src="app/standup/screenshots/02.png" width="180"/></td>
+    <td><img src="app/standup/screenshots/04.png" width="180"/></td>
+    <td><img src="app/standup/screenshots/03.png" width="180"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Leave</b></td>
+    <td align="center"><b>Apply for Leave</b></td>
+    <td align="center"><b>Pantry</b></td>
+    <td align="center"><b>Leaderboard</b></td>
+  </tr>
+  <tr>
+    <td><img src="app/standup/screenshots/05.png" width="180"/></td>
+    <td><img src="app/standup/screenshots/06.png" width="180"/></td>
+    <td><img src="app/standup/screenshots/07.png" width="180"/></td>
+    <td><img src="app/standup/screenshots/08.png" width="180"/></td>
+  </tr>
+</table>
+
+---
+
 ## Who It's For
 
 | Role | What they get |
