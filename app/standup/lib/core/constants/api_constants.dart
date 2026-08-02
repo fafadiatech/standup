@@ -30,6 +30,22 @@ class ApiConstants {
   static const String applyLeave =
       '/api/method/standup.api.apply_leave';
 
+  // Pantry endpoints
+  static const String getPantryCatalog =
+      '/api/method/standup.api.get_pantry_catalog';
+  static const String createSnackRequest =
+      '/api/method/standup.api.create_snack_request';
+  static const String getMySnackRequests =
+      '/api/method/standup.api.get_my_snack_requests';
+  static const String getAllSnackRequests =
+      '/api/method/standup.api.get_all_snack_requests';
+  static const String acceptSnackRequest =
+      '/api/method/standup.api.accept_snack_request';
+  static const String rejectSnackRequest =
+      '/api/method/standup.api.reject_snack_request';
+  static const String completeSnackRequest =
+      '/api/method/standup.api.complete_snack_request';
+
   // Secure-storage keys
   static const String keyApiKey    = 'api_key';
   static const String keyApiSecret = 'api_secret';

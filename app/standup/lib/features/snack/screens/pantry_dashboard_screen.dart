@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_button_styles.dart';
 import '../../../data/models/snack_request_model.dart';
-import '../../auth/providers/auth_provider.dart';
 import '../../../shared/widgets/pantry_scaffold.dart';
 import '../providers/snack_provider.dart';
 
@@ -12,6 +11,7 @@ class PantryDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(pantryManagementProvider);
     final pending = ref.watch(pantryPendingRequestsProvider);
     final accepted = ref.watch(pantryAcceptedRequestsProvider);
     final history = ref.watch(pantryCompletedOrRejectedRequestsProvider);
@@ -25,71 +25,116 @@ class PantryDashboardScreen extends ConsumerWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
         ),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: [
-            _Section(
-              title: 'Pending Requests',
-              requests: pending,
-              emptyText: 'No pending requests',
-              actionBuilder: (request) => Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _reject(context, ref, request.id),
-                      child: const Text('Reject'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _accept(ref, request.id),
-                      child: const Text('Accept'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _Section(
-              title: 'Accepted',
-              requests: accepted,
-              emptyText: 'No accepted requests',
-              actionBuilder: (request) => SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _complete(ref, request.id),
-                  style: AppButtonStyles.success,
-                  child: const Text('Mark Complete'),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _Section(
-              title: 'History',
-              requests: history,
-              emptyText: 'No history yet',
-              actionBuilder: (_) => const SizedBox.shrink(),
-            ),
-          ],
+        body: RefreshIndicator(
+          onRefresh: () => ref.read(pantryManagementProvider.notifier).refresh(),
+          child: _buildBody(context, ref, state, pending, accepted, history),
         ),
       ),
     );
   }
 
-  void _accept(WidgetRef ref, String requestId) {
-    final pantryUserId = ref.read(currentSessionUserProvider)?.id ?? '';
-    ref.read(snackProvider.notifier).acceptRequest(requestId, pantryUserId);
+  Widget _buildBody(
+    BuildContext context,
+    WidgetRef ref,
+    PantryManagementState state,
+    List<SnackRequestModel> pending,
+    List<SnackRequestModel> accepted,
+    List<SnackRequestModel> history,
+  ) {
+    if (state.isLoading && state.requests.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.error != null && state.requests.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            state.error!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: [
+        _Section(
+          title: 'Pending Requests',
+          requests: pending,
+          emptyText: 'No pending requests',
+          actionBuilder: (request) => Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _reject(context, ref, request.id),
+                  child: const Text('Reject'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => _accept(context, ref, request.id),
+                  child: const Text('Accept'),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _Section(
+          title: 'Accepted',
+          requests: accepted,
+          emptyText: 'No accepted requests',
+          actionBuilder: (request) => SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _complete(context, ref, request.id),
+              style: AppButtonStyles.success,
+              child: const Text('Mark Complete'),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _Section(
+          title: 'History',
+          requests: history,
+          emptyText: 'No history yet',
+          actionBuilder: (_) => const SizedBox.shrink(),
+        ),
+      ],
+    );
   }
 
-  void _complete(WidgetRef ref, String requestId) {
-    final pantryUserId = ref.read(currentSessionUserProvider)?.id ?? '';
-    ref.read(snackProvider.notifier).completeRequest(requestId, pantryUserId);
+  Future<void> _accept(BuildContext context, WidgetRef ref, String requestId) async {
+    try {
+      await ref.read(pantryManagementProvider.notifier).acceptRequest(requestId);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _complete(BuildContext context, WidgetRef ref, String requestId) async {
+    try {
+      await ref.read(pantryManagementProvider.notifier).completeRequest(requestId);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Future<void> _reject(BuildContext context, WidgetRef ref, String requestId) async {
     final reasonController = TextEditingController();
-    final accepted = await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -113,13 +158,20 @@ class PantryDashboardScreen extends ConsumerWidget {
       },
     );
 
-    if (accepted != true || reasonController.text.trim().isEmpty) return;
-    final pantryUserId = ref.read(currentSessionUserProvider)?.id ?? '';
-    ref.read(snackProvider.notifier).rejectRequest(
-          requestId: requestId,
-          pantryUserId: pantryUserId,
-          reason: reasonController.text.trim(),
+    if (confirmed != true || reasonController.text.trim().isEmpty) return;
+
+    try {
+      await ref.read(pantryManagementProvider.notifier).rejectRequest(
+            requestId: requestId,
+            reason: reasonController.text.trim(),
+          );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
         );
+      }
+    }
   }
 }
 
@@ -184,6 +236,12 @@ class _Section extends StatelessWidget {
                       Text(
                         request.notes!,
                         style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                    if (request.rejectionReason != null &&
+                        request.rejectionReason!.isNotEmpty)
+                      Text(
+                        'Reason: ${request.rejectionReason!}',
+                        style: const TextStyle(color: AppColors.error),
                       ),
                     const SizedBox(height: 10),
                     actionBuilder(request),

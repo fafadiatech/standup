@@ -12,6 +12,17 @@ extension SnackRequestLocationX on SnackRequestLocation {
         SnackRequestLocation.cabin2 => 'Cabin 2',
         SnackRequestLocation.cabin3 => 'Cabin 3',
       };
+
+  static SnackRequestLocation? fromLabel(String label) {
+    return switch (label.toLowerCase()) {
+      'desk' => SnackRequestLocation.desk,
+      'conference room' => SnackRequestLocation.conferenceRoom,
+      'cabin 1' => SnackRequestLocation.cabin1,
+      'cabin 2' => SnackRequestLocation.cabin2,
+      'cabin 3' => SnackRequestLocation.cabin3,
+      _ => null,
+    };
+  }
 }
 
 class SnackRequestLineItem {
@@ -24,6 +35,21 @@ class SnackRequestLineItem {
     required this.itemName,
     required this.quantity,
   });
+
+  factory SnackRequestLineItem.fromJson(Map<String, dynamic> json) {
+    final typeStr = (json['item_type'] as String? ?? 'snack').toLowerCase();
+    return SnackRequestLineItem(
+      itemType: typeStr == 'drink' ? SnackItemType.drink : SnackItemType.snack,
+      itemName: json['item_name'] as String? ?? '',
+      quantity: (json['quantity'] as num? ?? 1).toInt(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'item_name': itemName,
+        'item_type': itemType == SnackItemType.drink ? 'drink' : 'snack',
+        'quantity': quantity,
+      };
 }
 
 class SnackRequestModel {
@@ -52,6 +78,44 @@ class SnackRequestModel {
     this.handledAt,
     this.rejectionReason,
   });
+
+  factory SnackRequestModel.fromJson(Map<String, dynamic> json) {
+    final statusStr = (json['status'] as String? ?? 'pending').toLowerCase();
+    final status = switch (statusStr) {
+      'accepted' => SnackRequestStatus.accepted,
+      'rejected' => SnackRequestStatus.rejected,
+      'completed' => SnackRequestStatus.completed,
+      _ => SnackRequestStatus.pending,
+    };
+
+    final locationStr = json['location'] as String?;
+    final location = locationStr != null
+        ? SnackRequestLocationX.fromLabel(locationStr)
+        : null;
+
+    final itemsJson = json['items'] as List<dynamic>? ?? [];
+    final items = itemsJson
+        .map((e) => SnackRequestLineItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    return SnackRequestModel(
+      id: json['id'] as String? ?? '',
+      requestedByUserId: json['employee'] as String? ?? '',
+      requesterName: json['employee_name'] as String? ?? '',
+      items: items,
+      notes: json['notes'] as String?,
+      location: location,
+      requestedAt: json['requested_at'] != null
+          ? DateTime.tryParse(json['requested_at'] as String) ?? DateTime.now()
+          : DateTime.now(),
+      status: status,
+      handledByPantryUserId: null,
+      handledAt: json['handled_at'] != null
+          ? DateTime.tryParse(json['handled_at'] as String)
+          : null,
+      rejectionReason: json['rejection_reason'] as String?,
+    );
+  }
 
   String get itemsSummary =>
       items.map((item) => '${item.itemName} x${item.quantity}').join(', ');

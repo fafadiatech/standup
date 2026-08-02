@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/pantry_catalog_item.dart';
 import '../../../data/models/snack_request_model.dart';
-import '../../home/providers/home_provider.dart';
 import '../providers/snack_provider.dart';
 
 class ApplySnackRequestScreen extends ConsumerStatefulWidget {
@@ -21,6 +20,7 @@ class _ApplySnackRequestScreenState
   SnackItemType _itemType = SnackItemType.snack;
   final Map<String, int> _cart = {};
   SnackRequestLocation? _location;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -33,8 +33,8 @@ class _ApplySnackRequestScreenState
   int get _cartItemCount =>
       _cart.values.fold(0, (total, quantity) => total + quantity);
 
-  void _submit() {
-    if (!_hasCartItems) return;
+  Future<void> _submit() async {
+    if (!_hasCartItems || _isSubmitting) return;
 
     final catalog = ref.read(pantryCatalogProvider);
     final catalogByName = {for (final item in catalog) item.name: item};
@@ -49,14 +49,23 @@ class _ApplySnackRequestScreenState
         )
         .toList();
 
-    final user = ref.read(currentUserProvider);
-    ref.read(snackProvider.notifier).createRequest(
-          requestedByUserId: user.id,
-          requesterName: user.name,
+    setState(() => _isSubmitting = true);
+
+    final error = await ref.read(snackProvider.notifier).createRequest(
           items: lineItems,
           notes: _notesController.text.trim(),
           location: _location,
         );
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), backgroundColor: Colors.red),
+      );
+      return;
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Snack request submitted')),
@@ -96,10 +105,25 @@ class _ApplySnackRequestScreenState
 
   @override
   Widget build(BuildContext context) {
+    final snackState = ref.watch(snackProvider);
+    final catalog = ref.watch(pantryCatalogProvider);
+
+    if (snackState.isLoading && catalog.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: const Text('New Pantry Request'),
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final items = _itemType == SnackItemType.snack
         ? ref.watch(snackCatalogProvider)
         : ref.watch(drinkCatalogProvider);
-    final catalog = ref.watch(pantryCatalogProvider);
     final catalogByName = {for (final item in catalog) item.name: item};
     final cartEntries = _cart.entries
         .where((entry) => entry.value > 0)
@@ -304,12 +328,21 @@ class _ApplySnackRequestScreenState
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _hasCartItems ? _submit : null,
-                  child: Text(
-                    _hasCartItems
-                        ? 'Submit Request ($_cartItemCount)'
-                        : 'Submit Request',
-                  ),
+                  onPressed: (_hasCartItems && !_isSubmitting) ? _submit : null,
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          _hasCartItems
+                              ? 'Submit Request ($_cartItemCount)'
+                              : 'Submit Request',
+                        ),
                 ),
               ),
             ),

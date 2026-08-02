@@ -14,6 +14,7 @@ class SnackScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentSessionUserProvider);
+    final state = ref.watch(snackProvider);
     final requests = ref.watch(
       employeeSnackRequestsProvider(user?.id ?? ''),
     );
@@ -27,24 +28,50 @@ class SnackScreen extends ConsumerWidget {
           elevation: 0,
           scrolledUnderElevation: 0,
         ),
-        body: requests.isEmpty
-            ? const Center(
-                child: Text(
-                  'No requests yet. Tap + to request snacks or drinks.',
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
-              )
-            : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                itemBuilder: (_, i) => _SnackRequestCard(request: requests[i]),
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
-                itemCount: requests.length,
-              ),
+        body: RefreshIndicator(
+          onRefresh: () => ref.read(snackProvider.notifier).refresh(),
+          child: _buildBody(state, requests),
+        ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => context.push(AppStrings.routeSnackApply),
           child: const Icon(Icons.add),
         ),
       ),
+    );
+  }
+
+  Widget _buildBody(SnackState state, List<SnackRequestModel> requests) {
+    if (state.isLoading && requests.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.error != null && requests.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            state.error!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+      );
+    }
+
+    if (requests.isEmpty) {
+      return const Center(
+        child: Text(
+          'No requests yet. Tap + to request snacks or drinks.',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      itemBuilder: (_, i) => _SnackRequestCard(request: requests[i]),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemCount: requests.length,
     );
   }
 }
