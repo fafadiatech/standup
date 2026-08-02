@@ -2,12 +2,24 @@ class EventModel {
   final String id;
   final String title;
   final String date;
-  final String description;
+  final String? location;
+  final String? description;
 
   const EventModel({
     required this.id,
     required this.title,
     required this.date,
-    required this.description,
+    this.location,
+    this.description,
   });
+
+  factory EventModel.fromJson(Map<String, dynamic> json) {
+    return EventModel(
+      id:          json['id'] as String,
+      title:       json['title'] as String,
+      date:        json['event_date'] as String,
+      location:    json['location'] as String?,
+      description: json['description'] as String?,
+    );
+  }
 }

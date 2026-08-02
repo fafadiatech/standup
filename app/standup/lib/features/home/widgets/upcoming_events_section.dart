@@ -90,7 +90,7 @@ class _EventTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  event.description,
+                  event.description ?? '',
                   style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,

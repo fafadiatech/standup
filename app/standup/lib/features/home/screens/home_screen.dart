@@ -11,6 +11,8 @@ import '../widgets/achievement_carousel.dart';
 import '../widgets/holidays_banner.dart';
 import '../widgets/weekly_meetings_section.dart';
 import '../widgets/upcoming_events_section.dart';
+import '../widgets/birthdays_section.dart';
+import '../widgets/work_anniversaries_section.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -21,8 +23,10 @@ class HomeScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final achievements = ref.watch(achievementsProvider);
     final holidaysAsync = ref.watch(holidaysProvider);
-    final meetings = ref.watch(weeklyMeetingsProvider);
-    final events = ref.watch(upcomingEventsProvider);
+    final meetingsAsync = ref.watch(weeklyMeetingsProvider);
+    final eventsAsync = ref.watch(upcomingEventsProvider);
+    final birthdaysAsync = ref.watch(birthdaysProvider);
+    final anniversariesAsync = ref.watch(workAnniversariesProvider);
     final openTaskCount = ref
         .watch(taskProvider)
         .tasks
@@ -72,9 +76,30 @@ class HomeScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
                   AchievementCarousel(achievements: achievements),
                   const SizedBox(height: 24),
-                  WeeklyMeetingsSection(meetings: meetings),
+                  meetingsAsync.when(
+                    data: (meetings) => WeeklyMeetingsSection(meetings: meetings),
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, s) => const SizedBox.shrink(),
+                  ),
                   const SizedBox(height: 24),
-                  UpcomingEventsSection(events: events),
+                  eventsAsync.when(
+                    data: (events) => UpcomingEventsSection(events: events),
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, s) => const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 24),
+                  birthdaysAsync.when(
+                    data: (birthdays) => BirthdaysSection(birthdays: birthdays),
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, s) => const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 24),
+                  anniversariesAsync.when(
+                    data: (anniversaries) =>
+                        WorkAnniversariesSection(anniversaries: anniversaries),
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, s) => const SizedBox.shrink(),
+                  ),
                   const SizedBox(height: 16),
                   holidaysAsync.when(
                     data: (holidays) {

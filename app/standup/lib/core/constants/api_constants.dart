@@ -46,6 +46,16 @@ class ApiConstants {
   static const String completeSnackRequest =
       '/api/method/standup.api.complete_snack_request';
 
+  // Home endpoints
+  static const String getWeeklyMeetings =
+      '/api/method/standup.api.get_weekly_meetings';
+  static const String getUpcomingEvents =
+      '/api/method/standup.api.get_upcoming_events';
+  static const String getBirthdays =
+      '/api/method/standup.api.get_birthdays';
+  static const String getWorkAnniversaries =
+      '/api/method/standup.api.get_work_anniversaries';
+
   // Board endpoints
   static const String getLeaderboard =
       '/api/method/standup.api.get_leaderboard';
