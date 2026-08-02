@@ -65,7 +65,7 @@ _DESIGNATIONS = ["Software Engineer", "HR Manager", "Product Manager"]
 _EMPLOYEES = [
     (
         "alice.johnson@example.com", "Alice", "Johnson",
-        "Female", "1992-07-15", "2023-03-01",
+        "Female", "1992-08-12", "2023-03-01",
         "Engineering", "Software Engineer",
         ["Employee", "Leave Approver"],
     ),
@@ -129,6 +129,53 @@ _LEAVE_APPLICATIONS = [
         "bob.smith@example.com", "Privilege Leave",
         "2026-10-12", "2026-10-16",
         "Rejected", "Insufficient notice period",
+    ),
+]
+
+# (team_name, recurrence, meeting_time, location, description)
+_WEEKLY_MEETINGS = [
+    (
+        "Engineering Standup",
+        "Every Tuesday",
+        "09:00:00",
+        "Conference Room A",
+        "Daily sync for the engineering team to share progress and blockers.",
+    ),
+    (
+        "Product Review",
+        "Mon & Thu",
+        "14:00:00",
+        "Conference Room B",
+        "Product roadmap review and sprint planning with the product team.",
+    ),
+    (
+        "All Hands",
+        "Every Friday",
+        "17:00:00",
+        "Main Hall",
+        "Company-wide meeting for updates, shoutouts, and announcements.",
+    ),
+]
+
+# (title, event_date, location, description)
+_UPCOMING_EVENTS = [
+    (
+        "Company Outing",
+        "2026-09-15",
+        "Lonavala",
+        "Annual company outing — team-building activities and dinner.",
+    ),
+    (
+        "Diwali Celebration",
+        "2026-11-08",
+        "Office Cafeteria",
+        "Celebrate Diwali with sweets, lamps, and festivities.",
+    ),
+    (
+        "Annual Day",
+        "2026-12-31",
+        "Bandra Kurla Complex",
+        "Year-end celebrations, awards ceremony, and cultural performances.",
     ),
 ]
 
@@ -650,6 +697,43 @@ def _setup_employee_of_month() -> None:
     _tag(f"Employee of the Month {emp_id} / {award_month}", "created")
 
 
+def _setup_weekly_meetings() -> None:
+    for team_name, recurrence, meeting_time, location, description in _WEEKLY_MEETINGS:
+        if frappe.db.exists("Weekly Meeting", {"team_name": team_name, "recurrence": recurrence}):
+            _tag(f"Weekly Meeting '{team_name}' ({recurrence})", "skip")
+            continue
+
+        frappe.get_doc({
+            "doctype":      "Weekly Meeting",
+            "team_name":    team_name,
+            "recurrence":   recurrence,
+            "meeting_time": meeting_time,
+            "location":     location,
+            "description":  description,
+            "is_active":    1,
+        }).insert(ignore_permissions=True)
+        frappe.db.commit()
+        _tag(f"Weekly Meeting '{team_name}' ({recurrence} at {meeting_time})", "created")
+
+
+def _setup_upcoming_events() -> None:
+    for title, event_date, location, description in _UPCOMING_EVENTS:
+        if frappe.db.exists("Upcoming Event", {"title": title, "event_date": event_date}):
+            _tag(f"Upcoming Event '{title}' ({event_date})", "skip")
+            continue
+
+        frappe.get_doc({
+            "doctype":     "Upcoming Event",
+            "title":       title,
+            "event_date":  event_date,
+            "location":    location,
+            "description": description,
+            "is_active":   1,
+        }).insert(ignore_permissions=True)
+        frappe.db.commit()
+        _tag(f"Upcoming Event '{title}' ({event_date})", "created")
+
+
 def _item_type(item_name: str) -> str:
     """Look up item_type from the catalog fixture data."""
     for name, itype, _ in _PANTRY_CATALOG:
@@ -687,5 +771,8 @@ def run() -> None:
     _setup_energy_points_field()
     _setup_energy_points()
     _setup_employee_of_month()
+
+    _setup_weekly_meetings()
+    _setup_upcoming_events()
 
     print("=== Done ===", flush=True)

@@ -802,6 +802,161 @@ def reject_snack_request() -> dict:
     return {"status": "success", "message": _("Request rejected.")}
 
 
+@frappe.whitelist(methods=["GET"])
+def get_weekly_meetings() -> dict:
+    """
+    Return all active Weekly Meeting records, ordered by team_name.
+
+    Response:
+        { status, meetings: [ { id, team_name, recurrence, meeting_time,
+                                location, meeting_link, description } ] }
+    """
+    _require_auth()
+
+    rows = frappe.get_all(
+        "Weekly Meeting",
+        filters={"is_active": 1},
+        fields=["name", "team_name", "recurrence", "meeting_time",
+                "location", "meeting_link", "description"],
+        order_by="team_name asc",
+    )
+
+    meetings = [
+        {
+            "id":           r.name,
+            "team_name":    r.team_name,
+            "recurrence":   r.recurrence,
+            "meeting_time": str(r.meeting_time) if r.meeting_time else None,
+            "location":     r.location,
+            "meeting_link": r.meeting_link,
+            "description":  r.description,
+        }
+        for r in rows
+    ]
+
+    return {"status": "success", "meetings": meetings}
+
+
+@frappe.whitelist(methods=["GET"])
+def get_upcoming_events() -> dict:
+    """
+    Return active Upcoming Event records on or after today, ordered by event_date.
+
+    Response:
+        { status, events: [ { id, title, event_date, location, description } ] }
+    """
+    _require_auth()
+
+    today = getdate()
+
+    rows = frappe.get_all(
+        "Upcoming Event",
+        filters={"is_active": 1, "event_date": [">=", today]},
+        fields=["name", "title", "event_date", "location", "description"],
+        order_by="event_date asc",
+    )
+
+    events = [
+        {
+            "id":          r.name,
+            "title":       r.title,
+            "event_date":  formatdate(r.event_date, "MMM dd, yyyy"),
+            "location":    r.location,
+            "description": r.description,
+        }
+        for r in rows
+    ]
+
+    return {"status": "success", "events": events}
+
+
+@frappe.whitelist(methods=["GET"])
+def get_birthdays() -> dict:
+    """
+    Return active employees whose birthday falls in the current calendar month,
+    ordered by day of month.
+
+    Response:
+        { status, birthdays: [ { id, name, designation, day, month, day_month } ] }
+    """
+    _require_auth()
+
+    today = getdate()
+    current_month = today.month
+
+    rows = frappe.db.sql(
+        """
+        SELECT name, employee_name, designation, date_of_birth
+        FROM `tabEmployee`
+        WHERE status = 'Active'
+          AND date_of_birth IS NOT NULL
+          AND MONTH(date_of_birth) = %(month)s
+        ORDER BY DAY(date_of_birth) ASC
+        """,
+        {"month": current_month},
+        as_dict=True,
+    )
+
+    birthdays = [
+        {
+            "id":          r.name,
+            "name":        r.employee_name,
+            "designation": r.designation,
+            "day":         r.date_of_birth.day,
+            "month":       r.date_of_birth.strftime("%b"),
+            "day_month":   r.date_of_birth.strftime("%b %-d"),
+        }
+        for r in rows
+    ]
+
+    return {"status": "success", "birthdays": birthdays}
+
+
+@frappe.whitelist(methods=["GET"])
+def get_work_anniversaries() -> dict:
+    """
+    Return active employees whose work anniversary (date_of_joining) falls in
+    the current calendar month, ordered by day of month.
+
+    Response:
+        { status, anniversaries: [ { id, name, designation, day, month,
+                                      day_month, years } ] }
+    """
+    _require_auth()
+
+    today = getdate()
+    current_month = today.month
+    current_year  = today.year
+
+    rows = frappe.db.sql(
+        """
+        SELECT name, employee_name, designation, date_of_joining
+        FROM `tabEmployee`
+        WHERE status = 'Active'
+          AND date_of_joining IS NOT NULL
+          AND MONTH(date_of_joining) = %(month)s
+        ORDER BY DAY(date_of_joining) ASC
+        """,
+        {"month": current_month},
+        as_dict=True,
+    )
+
+    anniversaries = [
+        {
+            "id":          r.name,
+            "name":        r.employee_name,
+            "designation": r.designation,
+            "day":         r.date_of_joining.day,
+            "month":       r.date_of_joining.strftime("%b"),
+            "day_month":   r.date_of_joining.strftime("%b %-d"),
+            "years":       current_year - r.date_of_joining.year,
+        }
+        for r in rows
+    ]
+
+    return {"status": "success", "anniversaries": anniversaries}
+
+
 @frappe.whitelist(methods=["POST"])
 def complete_snack_request() -> dict:
     """

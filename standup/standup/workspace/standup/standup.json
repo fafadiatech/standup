@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"aB1cD2eF3g\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Standup</span>\",\"col\":12}},{\"id\":\"hI4jK5lM6n\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Pantry</span>\",\"col\":12}},{\"id\":\"oP7qR8sT9u\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Pantry Catalog Item\",\"col\":3}},{\"id\":\"vW0xY1zA2b\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Snack Request\",\"col\":3}},{\"id\":\"cD3eF4gH5i\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Snack Request Item\",\"col\":3}},{\"id\":\"jK6lM7nO8p\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Recognition</span>\",\"col\":12}},{\"id\":\"qR9sT0uV1w\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Employee of the Month\",\"col\":3}}]",
+ "content": "[{\"id\":\"aB1cD2eF3g\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Standup</span>\",\"col\":12}},{\"id\":\"hI4jK5lM6n\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Pantry</span>\",\"col\":12}},{\"id\":\"oP7qR8sT9u\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Pantry Catalog Item\",\"col\":3}},{\"id\":\"vW0xY1zA2b\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Snack Request\",\"col\":3}},{\"id\":\"cD3eF4gH5i\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Snack Request Item\",\"col\":3}},{\"id\":\"jK6lM7nO8p\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Recognition</span>\",\"col\":12}},{\"id\":\"qR9sT0uV1w\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Employee of the Month\",\"col\":3}},{\"id\":\"mN2oP3qR4s\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Meetings &amp; Events</span>\",\"col\":12}},{\"id\":\"tU5vW6xY7z\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Weekly Meeting\",\"col\":3}},{\"id\":\"aB8cD9eF0g\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Upcoming Event\",\"col\":3}}]",
  "creation": "2026-08-02 00:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -54,6 +54,22 @@
    "doc_view": "List",
    "label": "Employee of the Month",
    "link_to": "Employee of the Month",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Weekly Meeting",
+   "link_to": "Weekly Meeting",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Upcoming Event",
+   "link_to": "Upcoming Event",
    "stats_filter": "[]",
    "type": "DocType"
   }
