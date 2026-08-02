@@ -29,6 +29,8 @@ x-backend-defaults: &backend_defaults
   <<: [*customizable_image, *depends_on_configurator]
   volumes:
     - sites:/home/frappe/frappe-bench/sites
+    # Mount local standup source so code changes are visible without rebuilding.
+    - ./standup:/home/frappe/frappe-bench/apps/standup/standup
 
 services:
   # ─── Infrastructure ──────────────────────────────────────────────────────

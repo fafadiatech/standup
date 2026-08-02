@@ -23,10 +23,32 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
+from frappe.utils import getdate
 from frappe.utils.password import check_password
 
 
 # ─── Private helpers ─────────────────────────────────────────────────────────
+
+def _get_employee(user: str) -> str:
+    """Return the Employee docname linked to *user*, or raise DoesNotExistError."""
+    employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    if not employee:
+        frappe.throw(
+            _("No employee record found for this user."),
+            frappe.DoesNotExistError,
+        )
+    return employee
+
+
+def _map_leave_status(erpnext_status: str) -> str:
+    """Convert an ERPNext Leave Application status to the mobile API status string."""
+    return {
+        "Open":      "pending",
+        "Approved":  "approved",
+        "Rejected":  "rejected",
+        "Cancelled": "rejected",
+    }.get(erpnext_status, "pending")
+
 
 def _require_auth() -> str:
     """Return the current user or raise AuthenticationError for guests."""
@@ -222,4 +244,214 @@ def get_holidays(list_name: str = "Public Holidays") -> dict:
         "status":    "success",
         "list_name": list_name,
         "holidays":  holidays,
+    }
+
+
+# ─── Leave endpoints ─────────────────────────────────────────────────────────
+
+@frappe.whitelist(methods=["GET"])
+def get_leave_types() -> dict:
+    """
+    Return all active Leave Type names, sorted alphabetically.
+
+    Response 200:
+        {
+          "status":      "success",
+          "leave_types": ["Casual Leave", "Privilege Leave", "Sick Leave"]
+        }
+    """
+    _require_auth()
+
+    leave_types = frappe.get_all(
+        "Leave Type",
+        fields=["name"],
+        order_by="name asc",
+    )
+
+    return {
+        "status":      "success",
+        "leave_types": [lt["name"] for lt in leave_types],
+    }
+
+
+@frappe.whitelist(methods=["GET"])
+def get_leave_balance() -> dict:
+    """
+    Return the current employee's leave balances for the current calendar year.
+
+    Response 200:
+        {
+          "status": "success",
+          "balances": [
+            {
+              "leave_type": "Casual Leave",
+              "allocated":  3.0,
+              "used":       1.0,
+              "remaining":  2.0
+            },
+            ...
+          ]
+        }
+    """
+    user     = _require_auth()
+    employee = _get_employee(user)
+
+    today      = getdate()
+    year_start = today.replace(month=1, day=1)
+    year_end   = today.replace(month=12, day=31)
+
+    # Submitted allocations covering some portion of the current year.
+    allocations = frappe.get_all(
+        "Leave Allocation",
+        filters={
+            "employee":  employee,
+            "docstatus": 1,
+            "from_date": ["<=", year_end],
+            "to_date":   [">=", year_start],
+        },
+        fields=["leave_type", "total_leaves_allocated"],
+    )
+
+    # Approved applications within the current year.
+    approved_apps = frappe.get_all(
+        "Leave Application",
+        filters={
+            "employee":  employee,
+            "docstatus": 1,
+            "status":    "Approved",
+            "from_date": [">=", year_start],
+            "to_date":   ["<=", year_end],
+        },
+        fields=["leave_type", "total_leave_days"],
+    )
+
+    used_by_type: dict[str, float] = {}
+    for app in approved_apps:
+        lt = app["leave_type"]
+        used_by_type[lt] = used_by_type.get(lt, 0.0) + float(app["total_leave_days"] or 0)
+
+    balances = []
+    for alloc in allocations:
+        lt        = alloc["leave_type"]
+        allocated = float(alloc["total_leaves_allocated"] or 0)
+        used      = used_by_type.get(lt, 0.0)
+        balances.append({
+            "leave_type": lt,
+            "allocated":  allocated,
+            "used":       used,
+            "remaining":  allocated - used,
+        })
+
+    return {"status": "success", "balances": balances}
+
+
+@frappe.whitelist(methods=["GET"])
+def get_leave_history() -> dict:
+    """
+    Return the most recent 50 leave applications for the current employee,
+    newest first.
+
+    Response 200:
+        {
+          "status": "success",
+          "records": [
+            {
+              "id":         "HR-LAP-2026-00001",
+              "leave_type": "Casual Leave",
+              "from_date":  "2026-07-10",
+              "to_date":    "2026-07-10",
+              "total_days": 1.0,
+              "status":     "approved",
+              "reason":     "Personal errand"
+            },
+            ...
+          ]
+        }
+    """
+    user     = _require_auth()
+    employee = _get_employee(user)
+
+    applications = frappe.get_all(
+        "Leave Application",
+        filters={"employee": employee},
+        fields=[
+            "name", "leave_type", "from_date", "to_date",
+            "total_leave_days", "status", "description",
+        ],
+        order_by="from_date desc",
+        limit=50,
+    )
+
+    records = [
+        {
+            "id":         app["name"],
+            "leave_type": app["leave_type"],
+            "from_date":  str(app["from_date"]),
+            "to_date":    str(app["to_date"]),
+            "total_days": float(app["total_leave_days"] or 1),
+            "status":     _map_leave_status(app["status"]),
+            "reason":     app["description"] or None,
+        }
+        for app in applications
+    ]
+
+    return {"status": "success", "records": records}
+
+
+@frappe.whitelist(methods=["POST"])
+def apply_leave() -> dict:
+    """
+    Submit a new leave application for the current employee.
+
+    Request body (JSON or form-encoded):
+        leave_type  – name of the Leave Type (e.g. "Casual Leave")
+        from_date   – ISO date string, e.g. "2026-08-05"
+        to_date     – ISO date string, e.g. "2026-08-06"
+        reason      – optional free-text reason
+
+    Response 200:
+        {
+          "status":  "success",
+          "id":      "HR-LAP-2026-00002",
+          "message": "Leave application submitted successfully."
+        }
+
+    Raises frappe.ValidationError (HTTP 417) for missing fields or
+    ERPNext business-rule violations (insufficient balance, overlapping
+    dates, etc.).
+    """
+    user     = _require_auth()
+    employee = _get_employee(user)
+
+    data       = frappe.local.form_dict
+    leave_type = (data.get("leave_type") or "").strip()
+    from_date  = (data.get("from_date")  or "").strip()
+    to_date    = (data.get("to_date")    or "").strip()
+    reason     = (data.get("reason")     or "").strip() or None
+
+    if not leave_type or not from_date or not to_date:
+        frappe.throw(
+            _("leave_type, from_date, and to_date are required."),
+            frappe.ValidationError,
+        )
+
+    employee_name = frappe.db.get_value("Employee", employee, "employee_name")
+
+    leave_app = frappe.get_doc({
+        "doctype":       "Leave Application",
+        "employee":      employee,
+        "employee_name": employee_name,
+        "leave_type":    leave_type,
+        "from_date":     from_date,
+        "to_date":       to_date,
+        "description":   reason,
+        "status":        "Open",
+    })
+    leave_app.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {
+        "status":  "success",
+        "id":      leave_app.name,
+        "message": _("Leave application submitted successfully."),
     }
