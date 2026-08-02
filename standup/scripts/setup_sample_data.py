@@ -132,6 +132,24 @@ _LEAVE_APPLICATIONS = [
     ),
 ]
 
+_EMPLOYEE_ENERGY_POINTS = {
+    "alice.johnson@example.com": 1723,
+    "bob.smith@example.com":     1500,
+    "carol.davis@example.com":   1300,
+    "david.lee@example.com":     1000,
+}
+
+# (employee_email, award_month, description)
+_EMPLOYEE_OF_MONTH = (
+    "alice.johnson@example.com",
+    "2026-08-01",
+    (
+        "Alice has been outstanding this month, delivering the mobile "
+        "integration project ahead of schedule and mentoring two junior "
+        "engineers along the way."
+    ),
+)
+
 _PANTRY_ROLE = "Pantry"
 
 _PANTRY_USER = (
@@ -571,6 +589,67 @@ def _setup_snack_requests() -> None:
         _tag(f"Snack Request {emp_id} [{status}] — {', '.join(n for n, _ in items)}", "created")
 
 
+def _setup_energy_points_field() -> None:
+    """Create the energy_points custom field on Employee if it doesn't exist."""
+    if frappe.db.exists("Custom Field", {"dt": "Employee", "fieldname": "energy_points"}):
+        _tag("Custom Field Employee.energy_points", "skip")
+        return
+
+    frappe.get_doc({
+        "doctype":    "Custom Field",
+        "dt":         "Employee",
+        "fieldname":  "energy_points",
+        "label":      "Energy Points",
+        "fieldtype":  "Int",
+        "default":    "0",
+        "insert_after": "date_of_joining",
+    }).insert(ignore_permissions=True)
+    frappe.db.commit()
+    _tag("Custom Field Employee.energy_points", "created")
+
+
+def _setup_energy_points() -> None:
+    """Seed energy_points values on each test employee."""
+    for email, points in _EMPLOYEE_ENERGY_POINTS.items():
+        emp_id = _get_employee_id(email)
+        if not emp_id:
+            print(f"  [warn] Employee not found for '{email}', skipping energy points.", flush=True)
+            continue
+
+        current = frappe.db.get_value("Employee", emp_id, "energy_points") or 0
+        if int(current) == points:
+            _tag(f"Employee {emp_id} energy_points ({points})", "skip")
+            continue
+
+        frappe.db.set_value("Employee", emp_id, "energy_points", points)
+        frappe.db.commit()
+        _tag(f"Employee {emp_id} energy_points → {points}", "set")
+
+
+def _setup_employee_of_month() -> None:
+    """Insert the Employee of the Month fixture record if not already present."""
+    email, award_month, description = _EMPLOYEE_OF_MONTH
+
+    emp_id = _get_employee_id(email)
+    if not emp_id:
+        print(f"  [warn] Employee not found for '{email}', skipping Employee of the Month.", flush=True)
+        return
+
+    if frappe.db.exists("Employee of the Month", {"employee": emp_id, "award_month": award_month}):
+        _tag(f"Employee of the Month {emp_id} / {award_month}", "skip")
+        return
+
+    frappe.get_doc({
+        "doctype":     "Employee of the Month",
+        "employee":    emp_id,
+        "award_month": award_month,
+        "description": description,
+        "is_active":   1,
+    }).insert(ignore_permissions=True)
+    frappe.db.commit()
+    _tag(f"Employee of the Month {emp_id} / {award_month}", "created")
+
+
 def _item_type(item_name: str) -> str:
     """Look up item_type from the catalog fixture data."""
     for name, itype, _ in _PANTRY_CATALOG:
@@ -604,5 +683,9 @@ def run() -> None:
     _setup_pantry_user()
     _setup_pantry_catalog()
     _setup_snack_requests()
+
+    _setup_energy_points_field()
+    _setup_energy_points()
+    _setup_employee_of_month()
 
     print("=== Done ===", flush=True)

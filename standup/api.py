@@ -25,7 +25,7 @@ import json
 
 import frappe
 from frappe import _
-from frappe.utils import getdate, now_datetime
+from frappe.utils import getdate, now_datetime, formatdate
 from frappe.utils.password import check_password
 
 
@@ -81,13 +81,17 @@ def _get_or_create_token(user: str) -> dict[str, str]:
 def _build_user_profile(user: str) -> dict:
     """Minimal profile payload the Flutter app needs at login."""
     user_doc = frappe.get_doc("User", user)
-    return {
+    profile = {
         "name":       user_doc.name,
         "full_name":  user_doc.full_name,
         "email":      user_doc.email,
         "user_image": user_doc.user_image,
         "roles":      [r.role for r in user_doc.roles],
     }
+    # Attach energy points from the linked Employee record (0 if not found).
+    emp = frappe.db.get_value("Employee", {"user_id": user}, "energy_points")
+    profile["energy_points"] = int(emp or 0)
+    return profile
 
 
 # ─── Auth endpoints ──────────────────────────────────────────────────────────
@@ -456,6 +460,108 @@ def apply_leave() -> dict:
         "status":  "success",
         "id":      leave_app.name,
         "message": _("Leave application submitted successfully."),
+    }
+
+
+# ─── Board endpoints ─────────────────────────────────────────────────────────
+
+@frappe.whitelist(methods=["GET"])
+def get_leaderboard(limit: int = 10) -> dict:
+    """
+    Return the top employees ranked by energy points (descending).
+
+    Query params:
+        limit  – max entries to return (default: 10)
+
+    Response 200:
+        {
+          "status": "success",
+          "leaderboard": [
+            {
+              "rank":          1,
+              "employee_id":   "EMP-00001",
+              "name":          "Alice Johnson",
+              "designation":   "Software Engineer",
+              "department":    "Engineering",
+              "energy_points": 1723
+            },
+            ...
+          ]
+        }
+    """
+    _require_auth()
+
+    employees = frappe.get_all(
+        "Employee",
+        filters={"status": "Active"},
+        fields=["name as employee_id", "employee_name as name", "designation", "department", "energy_points"],
+        order_by="energy_points desc",
+        limit=int(limit),
+    )
+
+    leaderboard = [
+        {
+            "rank":          rank,
+            "employee_id":   emp["employee_id"],
+            "name":          emp["name"] or "",
+            "designation":   emp["designation"] or "",
+            "department":    emp["department"] or "",
+            "energy_points": int(emp["energy_points"] or 0),
+        }
+        for rank, emp in enumerate(employees, start=1)
+    ]
+
+    return {"status": "success", "leaderboard": leaderboard}
+
+
+@frappe.whitelist(methods=["GET"])
+def get_employee_of_month() -> dict:
+    """
+    Return the most recent active Employee of the Month record.
+
+    Response 200 (record found):
+        {
+          "status": "success",
+          "employee_of_month": {
+            "employee_id":   "EMP-00001",
+            "name":          "Alice Johnson",
+            "designation":   "Software Engineer",
+            "description":   "...",
+            "award_month":   "2026-08-01",
+            "display_month": "August 2026"
+          }
+        }
+
+    Response 200 (no record):
+        { "status": "success", "employee_of_month": null }
+    """
+    _require_auth()
+
+    records = frappe.get_all(
+        "Employee of the Month",
+        filters={"is_active": 1},
+        fields=["employee", "employee_name", "designation", "description", "award_month"],
+        order_by="award_month desc",
+        limit=1,
+    )
+
+    if not records:
+        return {"status": "success", "employee_of_month": None}
+
+    rec = records[0]
+    award_date = rec["award_month"]
+    display_month = formatdate(str(award_date), "MMMM yyyy") if award_date else ""
+
+    return {
+        "status": "success",
+        "employee_of_month": {
+            "employee_id":   rec["employee"],
+            "name":          rec["employee_name"] or "",
+            "designation":   rec["designation"] or "",
+            "description":   rec["description"] or "",
+            "award_month":   str(award_date) if award_date else None,
+            "display_month": display_month,
+        },
     }
 
 
