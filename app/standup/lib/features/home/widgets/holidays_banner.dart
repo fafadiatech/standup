@@ -6,8 +6,13 @@ import '../screens/holidays_screen.dart';
 
 class HolidaysBanner extends StatelessWidget {
   final HolidayModel holiday;
+  final int holidayIndex;
 
-  const HolidaysBanner({super.key, required this.holiday});
+  const HolidaysBanner({
+    super.key,
+    required this.holiday,
+    required this.holidayIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +20,9 @@ class HolidaysBanner extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const HolidaysScreen()),
+          MaterialPageRoute(
+            builder: (_) => HolidaysScreen(scrollToIndex: holidayIndex),
+          ),
         ),
         borderRadius: BorderRadius.circular(12),
         child: Container(

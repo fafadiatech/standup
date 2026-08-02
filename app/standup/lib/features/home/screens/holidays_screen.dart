@@ -5,11 +5,48 @@ import '../../../core/theme/app_colors.dart';
 import '../providers/home_provider.dart';
 import '../widgets/holiday_list_item.dart';
 
-class HolidaysScreen extends ConsumerWidget {
-  const HolidaysScreen({super.key});
+// Estimated total height of each list item (padding + content + margin)
+const double _kItemHeight = 86.0;
+// Top padding of the ListView
+const double _kListTopPadding = 16.0;
+
+class HolidaysScreen extends ConsumerStatefulWidget {
+  final int? scrollToIndex;
+
+  const HolidaysScreen({super.key, this.scrollToIndex});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HolidaysScreen> createState() => _HolidaysScreenState();
+}
+
+class _HolidaysScreenState extends ConsumerState<HolidaysScreen> {
+  final _scrollController = ScrollController();
+  bool _hasScrolled = false;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToItem(int index) {
+    if (_hasScrolled) return;
+    _hasScrolled = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final offset = _kListTopPadding + index * _kItemHeight;
+      final maxExtent = _scrollController.position.maxScrollExtent;
+      _scrollController.animateTo(
+        offset.clamp(0.0, maxExtent),
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final holidaysAsync = ref.watch(holidaysProvider);
 
     return Scaffold(
@@ -59,15 +96,28 @@ class HolidaysScreen extends ConsumerWidget {
             ),
           ),
         ),
-        data: (holidays) => holidays.isEmpty
-            ? const _EmptyState()
-            : ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                itemCount: holidays.length,
-                itemBuilder: (context, index) {
-                  return HolidayListItem(holiday: holidays[index]);
-                },
-              ),
+        data: (holidays) {
+          if (holidays.isEmpty) return const _EmptyState();
+
+          final today = DateTime.now();
+          final todayDate = DateTime(today.year, today.month, today.day);
+
+          if (widget.scrollToIndex != null) {
+            _scrollToItem(widget.scrollToIndex!);
+          }
+
+          return ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            itemCount: holidays.length,
+            itemBuilder: (context, index) {
+              final holiday = holidays[index];
+              final date = DateTime.tryParse(holiday.date);
+              final isPast = date != null && date.isBefore(todayDate);
+              return HolidayListItem(holiday: holiday, isPast: isPast);
+            },
+          );
+        },
       ),
     );
   }

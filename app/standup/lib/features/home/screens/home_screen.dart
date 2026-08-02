@@ -77,9 +77,21 @@ class HomeScreen extends ConsumerWidget {
                   UpcomingEventsSection(events: events),
                   const SizedBox(height: 16),
                   holidaysAsync.when(
-                    data: (holidays) => holidays.isNotEmpty
-                        ? HolidaysBanner(holiday: holidays.first)
-                        : const SizedBox.shrink(),
+                    data: (holidays) {
+                      final today = DateTime.now();
+                      final todayDate =
+                          DateTime(today.year, today.month, today.day);
+                      for (int i = 0; i < holidays.length; i++) {
+                        final date = DateTime.tryParse(holidays[i].date);
+                        if (date != null && !date.isBefore(todayDate)) {
+                          return HolidaysBanner(
+                            holiday: holidays[i],
+                            holidayIndex: i,
+                          );
+                        }
+                      }
+                      return const SizedBox.shrink();
+                    },
                     loading: () => const SizedBox.shrink(),
                     error: (e, s) => const SizedBox.shrink(),
                   ),
