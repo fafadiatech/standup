@@ -2,7 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/task_model.dart';
 import '../../../data/models/comment_model.dart';
 import '../../../data/models/time_log_model.dart';
-import '../../../data/mock/mock_data.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/task_service.dart';
 
 // ---------------------------------------------------------------------------
 // Online/Offline status
@@ -17,12 +18,16 @@ class TaskState {
   final String searchQuery;
   final String activeFilter;
   final bool isOnline;
+  final bool isLoading;
+  final String? error;
 
   const TaskState({
     required this.tasks,
     required this.searchQuery,
     required this.activeFilter,
     required this.isOnline,
+    this.isLoading = false,
+    this.error,
   });
 
   TaskState copyWith({
@@ -30,12 +35,17 @@ class TaskState {
     String? searchQuery,
     String? activeFilter,
     bool? isOnline,
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
   }) {
     return TaskState(
       tasks: tasks ?? this.tasks,
       searchQuery: searchQuery ?? this.searchQuery,
       activeFilter: activeFilter ?? this.activeFilter,
       isOnline: isOnline ?? this.isOnline,
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 }
@@ -58,15 +68,30 @@ bool _isOverdue(TaskModel t) {
 // Notifier
 // ---------------------------------------------------------------------------
 class TaskNotifier extends StateNotifier<TaskState> {
-  TaskNotifier()
-      : super(
-          TaskState(
-            tasks: List.from(MockData.tasks),
-            searchQuery: '',
-            activeFilter: 'All',
-            isOnline: true,
-          ),
-        );
+  TaskNotifier(this._service)
+      : super(const TaskState(
+          tasks: [],
+          searchQuery: '',
+          activeFilter: 'All',
+          isOnline: true,
+          isLoading: true,
+        )) {
+    loadTasks();
+  }
+
+  final TaskService _service;
+
+  // --- Load from API ---
+
+  Future<void> loadTasks() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final tasks = await _service.getTasks();
+      state = state.copyWith(tasks: tasks, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
 
   // --- Filtering helpers ---
 
@@ -85,7 +110,7 @@ class TaskNotifier extends StateNotifier<TaskState> {
     switch (state.activeFilter) {
       case 'Today':
         tasks = tasks.where((t) => _isToday(t.dueDate)).toList();
-      case 'High Priority':
+      case 'High':
         tasks = tasks
             .where((t) =>
                 t.priority == TaskPriority.high ||
@@ -151,11 +176,14 @@ class TaskNotifier extends StateNotifier<TaskState> {
   }
 
   void updateTaskStatus(String taskId, TaskStatus status) {
+    // Optimistic local update
     final tasks = state.tasks.map((task) {
       if (task.id != taskId) return task;
       return task.copyWith(status: status);
     }).toList();
     state = state.copyWith(tasks: tasks);
+    // Persist to server — ignore errors silently so UI stays responsive
+    _service.updateTaskStatus(taskId, status).catchError((_) {});
   }
 
   void addTask(TaskModel task) {
@@ -190,6 +218,10 @@ class TaskNotifier extends StateNotifier<TaskState> {
 // ---------------------------------------------------------------------------
 // Providers
 // ---------------------------------------------------------------------------
+final _taskServiceProvider = Provider<TaskService>(
+  (ref) => TaskService(AuthService()),
+);
+
 final taskProvider = StateNotifierProvider<TaskNotifier, TaskState>((ref) {
-  return TaskNotifier();
+  return TaskNotifier(ref.read(_taskServiceProvider));
 });

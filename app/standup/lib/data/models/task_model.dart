@@ -40,6 +40,46 @@ class TaskModel {
     required this.isSynced,
   });
 
+  factory TaskModel.fromJson(Map<String, dynamic> json) {
+    return TaskModel(
+      id: json['id'] as String,
+      title: (json['title'] as String?) ?? '',
+      description: (json['description'] as String?) ?? '',
+      priority: _priorityFromString(json['priority'] as String? ?? 'medium'),
+      status: _statusFromString(json['status'] as String? ?? 'todo'),
+      dueDate: DateTime.parse(json['due_date'] as String),
+      relatedDocument: (json['related_document'] as String?) ?? '',
+      checklist: ((json['checklist'] as List<dynamic>?) ?? [])
+          .map((e) => ChecklistItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      attachments: [],
+      comments: [],
+      timeLogs: [],
+      hasPendingApproval: (json['has_pending_approval'] as bool?) ?? false,
+      hasActiveTimer: false,
+      isSynced: true,
+    );
+  }
+
+  static TaskPriority _priorityFromString(String s) {
+    switch (s) {
+      case 'urgent': return TaskPriority.urgent;
+      case 'high':   return TaskPriority.high;
+      case 'low':    return TaskPriority.low;
+      default:       return TaskPriority.medium;
+    }
+  }
+
+  static TaskStatus _statusFromString(String s) {
+    switch (s) {
+      case 'in_progress': return TaskStatus.inProgress;
+      case 'paused':      return TaskStatus.paused;
+      case 'completed':   return TaskStatus.completed;
+      case 'overdue':     return TaskStatus.overdue;
+      default:            return TaskStatus.todo;
+    }
+  }
+
   TaskModel copyWith({
     String? id,
     String? title,

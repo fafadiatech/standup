@@ -990,6 +990,134 @@ def complete_snack_request() -> dict:
 
 
 @frappe.whitelist(methods=["GET"])
+def get_tasks() -> dict:
+    """
+    Return ERPNext Task records assigned to the current user, ordered by due date.
+
+    Uses ERPNext's built-in Task DocType. Tasks are filtered by the `_assign`
+    column (Frappe's native assignment mechanism) and must have a due date set.
+
+    Response 200:
+        {
+          "status": "success",
+          "tasks": [
+            {
+              "id":                   "TASK-2026-00001",
+              "title":                "Implement auth module",
+              "description":          "...",
+              "status":               "in_progress",
+              "priority":             "high",
+              "due_date":             "2026-08-07",
+              "related_document":     "",
+              "has_pending_approval": false,
+              "checklist":            []
+            },
+            ...
+          ]
+        }
+    """
+    user = _require_auth()
+
+    # ERPNext Task status → mobile API string.
+    # Cancelled and Template are excluded from the mobile view.
+    _STATUS_MAP = {
+        "Open":           "todo",
+        "Working":        "in_progress",
+        "Pending Review": "paused",
+        "Overdue":        "overdue",
+        "Completed":      "completed",
+    }
+    _PRIORITY_MAP = {
+        "Low":    "low",
+        "Medium": "medium",
+        "High":   "high",
+        "Urgent": "urgent",
+    }
+
+    rows = frappe.get_all(
+        "Task",
+        filters=[
+            ["Task", "_assign", "like", f"%{user}%"],
+            ["Task", "exp_end_date", "is", "set"],
+        ],
+        fields=["name", "subject", "description", "status", "priority",
+                "exp_end_date", "project"],
+        order_by="exp_end_date asc",
+    )
+
+    tasks = []
+    for r in rows:
+        if r.status not in _STATUS_MAP:
+            continue  # skip Cancelled, Template
+        tasks.append({
+            "id":                   r.name,
+            "title":                r.subject or "",
+            "description":          frappe.utils.strip_html(r.description or ""),
+            "status":               _STATUS_MAP[r.status],
+            "priority":             _PRIORITY_MAP.get(r.priority, "medium"),
+            "due_date":             str(r.exp_end_date),
+            "related_document":     r.project or "",
+            "has_pending_approval": False,
+            "checklist":            [],
+        })
+
+    return {"status": "success", "tasks": tasks}
+
+
+@frappe.whitelist(methods=["POST"])
+def update_task_status() -> dict:
+    """
+    Update the status of an ERPNext Task assigned to the current user.
+
+    Uses db_set() to bypass ERPNext's validate() hook which would otherwise
+    auto-recalculate overdue status and interfere with mobile-driven updates.
+
+    Request body:
+        task_id – name of the Task doc (e.g. TASK-2026-00001)
+        status  – new status: todo | in_progress | paused | completed | overdue
+
+    Response 200:
+        { "status": "success", "message": "Task status updated." }
+
+    Raises frappe.ValidationError for missing / invalid params.
+    Raises frappe.PermissionError if the task is not assigned to the current user.
+    """
+    user = _require_auth()
+
+    data    = frappe.local.form_dict
+    task_id = (data.get("task_id") or "").strip()
+    status  = (data.get("status")  or "").strip()
+
+    _VALID = {"todo", "in_progress", "paused", "completed", "overdue"}
+    if not task_id:
+        frappe.throw(_("task_id is required."), frappe.ValidationError)
+    if status not in _VALID:
+        frappe.throw(
+            _("status must be one of: {0}.").format(", ".join(sorted(_VALID))),
+            frappe.ValidationError,
+        )
+
+    doc = frappe.get_doc("Task", task_id)
+    assigned = json.loads(doc._assign or "[]")
+    if user not in assigned:
+        frappe.throw(_("You can only update tasks assigned to you."), frappe.PermissionError)
+
+    _STATUS_REVERSE = {
+        "todo":        "Open",
+        "in_progress": "Working",
+        "paused":      "Pending Review",
+        "completed":   "Completed",
+        "overdue":     "Overdue",
+    }
+    # db_set bypasses ERPNext's Task.validate() which would auto-flip status
+    # back to "Overdue" on past-due tasks if we used doc.save().
+    doc.db_set("status", _STATUS_REVERSE[status], update_modified=False)
+    frappe.db.commit()
+
+    return {"status": "success", "message": _("Task status updated.")}
+
+
+@frappe.whitelist(methods=["GET"])
 def get_achievements() -> dict:
     """
     Return active Achievement records ordered by achieved_date descending.

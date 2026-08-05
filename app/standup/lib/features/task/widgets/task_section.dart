@@ -32,12 +32,12 @@ class _TaskSectionState extends State<TaskSection> {
         GestureDetector(
           onTap: () => setState(() => _expanded = !_expanded),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
                 Container(
-                  width: 4,
-                  height: 16,
+                  width: 3,
+                  height: 14,
                   decoration: BoxDecoration(
                     color: widget.titleColor,
                     borderRadius: BorderRadius.circular(2),
@@ -45,35 +45,18 @@ class _TaskSectionState extends State<TaskSection> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  widget.title,
+                  '${widget.title} • ${widget.tasks.length}',
                   style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                     color: widget.titleColor,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: widget.titleColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${widget.tasks.length}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: widget.titleColor,
-                    ),
+                    letterSpacing: 0.2,
                   ),
                 ),
                 const Spacer(),
                 Icon(
                   _expanded ? Icons.expand_less : Icons.expand_more,
-                  size: 18,
+                  size: 16,
                   color: AppColors.textSecondary,
                 ),
               ],

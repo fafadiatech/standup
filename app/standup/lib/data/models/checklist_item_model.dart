@@ -9,6 +9,14 @@ class ChecklistItem {
     required this.isCompleted,
   });
 
+  factory ChecklistItem.fromJson(Map<String, dynamic> json) {
+    return ChecklistItem(
+      id: (json['id'] as String?) ?? '',
+      label: (json['label'] as String?) ?? '',
+      isCompleted: (json['is_completed'] as bool?) ?? false,
+    );
+  }
+
   ChecklistItem copyWith({
     String? id,
     String? label,

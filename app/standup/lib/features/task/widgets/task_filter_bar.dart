@@ -9,9 +9,8 @@ class TaskFilterBar extends ConsumerWidget {
   static const List<String> _filters = [
     'All',
     'Today',
-    'High Priority',
+    'High',
     'In Progress',
-    'Completed',
   ];
 
   @override
@@ -31,7 +30,7 @@ class TaskFilterBar extends ConsumerWidget {
               filled: true,
               fillColor: AppColors.cardBackground,
               contentPadding:
-                  const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                  const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: AppColors.border),
@@ -48,13 +47,36 @@ class TaskFilterBar extends ConsumerWidget {
           ),
         ),
         SizedBox(
-          height: 48,
+          height: 40,
           child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
             scrollDirection: Axis.horizontal,
-            itemCount: _filters.length,
-            separatorBuilder: (context, idx) => const SizedBox(width: 8),
+            itemCount: _filters.length + 1,
+            separatorBuilder: (context, idx) => const SizedBox(width: 6),
             itemBuilder: (context, index) {
+              if (index == _filters.length) {
+                // Overflow chip for Completed
+                final isActive = taskState.activeFilter == 'Completed';
+                return FilterChip(
+                  label: Text(isActive ? 'Completed' : '···'),
+                  selected: isActive,
+                  onSelected: (_) => notifier.setFilter('Completed'),
+                  selectedColor: const Color(0xFF22C55E),
+                  backgroundColor: AppColors.cardBackground,
+                  labelStyle: TextStyle(
+                    color: isActive ? AppColors.white : AppColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  side: BorderSide(
+                    color: isActive
+                        ? const Color(0xFF22C55E)
+                        : AppColors.border,
+                  ),
+                  showCheckmark: false,
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                );
+              }
               final filter = _filters[index];
               final isActive = taskState.activeFilter == filter;
               return FilterChip(
@@ -72,7 +94,7 @@ class TaskFilterBar extends ConsumerWidget {
                   color: isActive ? AppColors.primary : AppColors.border,
                 ),
                 showCheckmark: false,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 2),
               );
             },
           ),

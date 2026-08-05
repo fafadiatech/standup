@@ -62,14 +62,24 @@ String _statusLabel(TaskStatus s) {
   }
 }
 
-bool _shouldShowStatus(TaskModel task) {
-  return task.status == TaskStatus.inProgress ||
-      task.status == TaskStatus.paused ||
-      task.status == TaskStatus.todo;
-}
-
-bool _shouldShowPriority(TaskPriority priority) {
-  return priority == TaskPriority.urgent || priority == TaskPriority.high;
+/// Returns the single badge to show on a card: Priority if urgent/high,
+/// otherwise Status if inProgress/paused. Never both.
+_MetaChip? _singleBadge(TaskModel task) {
+  if (task.priority == TaskPriority.urgent ||
+      task.priority == TaskPriority.high) {
+    return _MetaChip(
+      label: _priorityLabel(task.priority),
+      color: _priorityColor(task.priority),
+    );
+  }
+  if (task.status == TaskStatus.inProgress ||
+      task.status == TaskStatus.paused) {
+    return _MetaChip(
+      label: _statusLabel(task.status),
+      color: _statusColor(task.status),
+    );
+  }
+  return null;
 }
 
 class TaskCard extends ConsumerWidget {
@@ -108,17 +118,16 @@ class TaskCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 6,
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+          padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -132,7 +141,7 @@ class TaskCard extends ConsumerWidget {
                       child: Text(
                         task.title,
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.w600,
                           height: 1.3,
                           color: AppColors.textPrimary,
@@ -142,11 +151,11 @@ class TaskCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   _ActionButton(task: task),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => context.push('/task/${task.id}'),
@@ -199,70 +208,34 @@ class _TaskMetaBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dueDateStr =
-        DateFormat('EEE, dd MMM', 'en_US').format(task.dueDate);
-    final showPriority = _shouldShowPriority(task.priority);
-    final showStatus = _shouldShowStatus(task);
-    final hasChips = showPriority || showStatus;
+    final dueDateStr = DateFormat('d MMM', 'en_US').format(task.dueDate);
     final hasRelated = task.relatedDocument.isNotEmpty;
-    final hasRow2 = hasRelated || hasChips;
+    final metaText = hasRelated ? '$dueDateStr • ${task.relatedDocument}' : dueDateStr;
+    final badge = _singleBadge(task);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(
-          children: [
-            const Icon(
-              Icons.calendar_today_outlined,
-              size: 14,
+        const Icon(
+          Icons.calendar_today_outlined,
+          size: 13,
+          color: AppColors.textSecondary,
+        ),
+        const SizedBox(width: 5),
+        Expanded(
+          child: Text(
+            metaText,
+            style: const TextStyle(
+              fontSize: 14,
               color: AppColors.textSecondary,
             ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                'Due $dueDateStr',
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        if (hasRow2) ...[
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              if (hasRelated)
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 180),
-                  child: Text(
-                    task.relatedDocument,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              if (showPriority)
-                _MetaChip(
-                  label: _priorityLabel(task.priority),
-                  color: _priorityColor(task.priority),
-                ),
-              if (showStatus)
-                _MetaChip(
-                  label: _statusLabel(task.status),
-                  color: _statusColor(task.status),
-                ),
-            ],
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
+        ),
+        if (badge != null) ...[
+          const SizedBox(width: 8),
+          badge,
         ],
       ],
     );
@@ -278,11 +251,10 @@ class _MetaChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         label,
@@ -327,8 +299,8 @@ class _ActionButton extends ConsumerWidget {
       case TaskStatus.paused:
         return _TaskActionIcon(
           tooltip: 'Resume',
-          icon: Icons.play_arrow_rounded,
-          filled: false,
+          icon: Icons.play_circle_rounded,
+          filled: true,
           onPressed: () {
             notifier.updateTaskStatus(task.id, TaskStatus.inProgress);
             context.push('/task/${task.id}');
@@ -376,11 +348,11 @@ class _TaskActionIcon extends StatelessWidget {
             splashColor: AppColors.primary.withValues(alpha: 0.2),
             highlightColor: AppColors.primary.withValues(alpha: 0.1),
             child: SizedBox(
-              width: 44,
-              height: 44,
+              width: 32,
+              height: 32,
               child: Icon(
                 icon,
-                size: 24,
+                size: 18,
                 color: filled ? AppColors.white : AppColors.primary,
               ),
             ),

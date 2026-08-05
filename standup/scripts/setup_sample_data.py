@@ -218,6 +218,113 @@ _ACHIEVEMENTS = [
     ),
 ]
 
+# Uses ERPNext's built-in Task DocType.
+# Status values must match ERPNext Task options:
+#   Open | Working | Pending Review | Overdue | Completed
+# (email, subject, description, erpnext_status, priority, exp_end_date)
+_TASKS = [
+    # Alice — Engineering / Software Engineer
+    (
+        "alice.johnson@example.com",
+        "Implement user authentication module",
+        "Build JWT-based auth with refresh token support for the mobile API.",
+        "Working", "High", "2026-08-07",
+    ),
+    (
+        "alice.johnson@example.com",
+        "Write unit tests for API endpoints",
+        "Achieve ≥80% coverage across all standup.api methods.",
+        "Open", "Medium", "2026-08-12",
+    ),
+    (
+        "alice.johnson@example.com",
+        "Fix login page validation bug",
+        "Empty password field submits the form without showing an error.",
+        "Overdue", "Urgent", "2026-07-30",
+    ),
+    (
+        "alice.johnson@example.com",
+        "Code review for mobile PR",
+        "Review and approve the pantry feature pull request.",
+        "Completed", "Low", "2026-08-01",
+    ),
+    # Bob — Engineering / Software Engineer
+    (
+        "bob.smith@example.com",
+        "Set up CI/CD pipeline",
+        "Configure GitHub Actions for build, test, and deploy stages.",
+        "Pending Review", "High", "2026-08-10",
+    ),
+    (
+        "bob.smith@example.com",
+        "Migrate database schema",
+        "Apply new ERPNext custom fields and re-seed sample data.",
+        "Working", "Urgent", "2026-08-06",
+    ),
+    (
+        "bob.smith@example.com",
+        "Update API documentation",
+        "Document all new mobile endpoints in Postman and README.",
+        "Open", "Low", "2026-08-15",
+    ),
+    (
+        "bob.smith@example.com",
+        "Fix memory leak in worker service",
+        "Background task worker accumulates file handles over long runs.",
+        "Overdue", "High", "2026-07-28",
+    ),
+    # Carol — Human Resources / HR Manager
+    (
+        "carol.davis@example.com",
+        "Prepare onboarding materials",
+        "Update welcome deck and checklist for new engineering hires.",
+        "Open", "Medium", "2026-08-08",
+    ),
+    (
+        "carol.davis@example.com",
+        "Conduct performance reviews",
+        "Complete Q2 performance review cycle for the Engineering team.",
+        "Working", "High", "2026-08-14",
+    ),
+    (
+        "carol.davis@example.com",
+        "Update leave policy document",
+        "Incorporate the new privilege leave carry-forward rules.",
+        "Completed", "Medium", "2026-07-25",
+    ),
+    (
+        "carol.davis@example.com",
+        "Schedule team building event",
+        "Organise the Q3 team outing logistics and RSVP collection.",
+        "Pending Review", "Low", "2026-08-20",
+    ),
+    # David — Product / Product Manager
+    (
+        "david.lee@example.com",
+        "Define Q3 product roadmap",
+        "Prioritise features for Q3 based on user feedback and OKRs.",
+        "Working", "Urgent", "2026-08-07",
+    ),
+    (
+        "david.lee@example.com",
+        "User research interview setup",
+        "Schedule and script five user interviews for the leave module.",
+        "Open", "Medium", "2026-08-11",
+    ),
+    (
+        "david.lee@example.com",
+        "Competitive analysis report",
+        "Benchmark standup app features against three competitor apps.",
+        "Overdue", "High", "2026-07-31",
+    ),
+    (
+        "david.lee@example.com",
+        "Sprint retrospective planning",
+        "Prepare retro board and agenda for the end-of-sprint meeting.",
+        "Open", "Low", "2026-08-18",
+    ),
+]
+
 _EMPLOYEE_ENERGY_POINTS = {
     "alice.johnson@example.com": 1723,
     "bob.smith@example.com":     1500,
@@ -779,6 +886,57 @@ def _setup_achievements() -> None:
         _tag(f"Achievement '{badge_title}' for {emp_id} ({achieved_date})", "created")
 
 
+def _setup_tasks() -> None:
+    from frappe.desk.form.assign_to import add as frappe_assign
+
+    for email, subject, description, erpnext_status, priority, exp_end_date in _TASKS:
+        # Guard: skip if a Task with this subject is already assigned to this user
+        existing = frappe.db.sql(
+            """
+            SELECT name FROM `tabTask`
+            WHERE subject = %(subject)s
+              AND `_assign` LIKE %(pattern)s
+            LIMIT 1
+            """,
+            {"subject": subject, "pattern": f"%{email}%"},
+            as_dict=True,
+        )
+        if existing:
+            _tag(f"Task '{subject}' for {email}", "skip")
+            continue
+
+        doc = frappe.get_doc({
+            "doctype":     "Task",
+            "subject":     subject,
+            "description": description,
+            "status":      erpnext_status,
+            "priority":    priority,
+            "exp_end_date": exp_end_date,
+        })
+        doc.insert(ignore_permissions=True)
+        frappe.db.commit()
+
+        # Assign to the user via Frappe's native mechanism so _assign is populated
+        # and get_tasks() LIKE filter works correctly.
+        try:
+            frappe_assign({
+                "doctype":    "Task",
+                "name":       doc.name,
+                "assign_to":  [email],
+                "bulk_assign": True,
+                "re_assign":   False,
+            })
+            frappe.db.commit()
+        except Exception as e:
+            # Fallback: write _assign directly if the above fails
+            import json as _json
+            frappe.db.set_value("Task", doc.name, "_assign", _json.dumps([email]))
+            frappe.db.commit()
+            _tag(f"Task '{subject}' assign fallback ({e})", "warn")
+
+        _tag(f"Task '{subject}' [{erpnext_status}] → {email}", "created")
+
+
 def _setup_upcoming_events() -> None:
     for title, event_date, location, description in _UPCOMING_EVENTS:
         if frappe.db.exists("Upcoming Event", {"title": title, "event_date": event_date}):
@@ -834,6 +992,8 @@ def run() -> None:
     _setup_energy_points_field()
     _setup_energy_points()
     _setup_employee_of_month()
+
+    _setup_tasks()
 
     _setup_weekly_meetings()
     _setup_upcoming_events()

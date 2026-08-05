@@ -56,6 +56,12 @@ class ApiConstants {
   static const String getWorkAnniversaries =
       '/api/method/standup.api.get_work_anniversaries';
 
+  // Task endpoints
+  static const String getTasks =
+      '/api/method/standup.api.get_tasks';
+  static const String updateTaskStatus =
+      '/api/method/standup.api.update_task_status';
+
   // Achievement endpoints
   static const String getAchievements =
       '/api/method/standup.api.get_achievements';
