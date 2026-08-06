@@ -38,6 +38,58 @@ class TaskService {
     throw _extractError(body, 'Failed to load tasks.');
   }
 
+  /// Creates a new task on the server and returns the server-assigned task ID.
+  ///
+  /// Throws a [String] error message on failure.
+  Future<String> createTask({
+    required String title,
+    required String description,
+    required TaskPriority priority,
+    required DateTime dueDate,
+    required String relatedDocument,
+  }) async {
+    final authHeader = await _authService.authHeader();
+    if (authHeader == null) throw 'Not authenticated.';
+
+    final uri = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.createTask}');
+
+    final response = await http
+        .post(
+          uri,
+          headers: {
+            'Host': ApiConstants.frappeSiteName,
+            'Authorization': authHeader,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: {
+            'title': title,
+            'description': description,
+            'priority': _priorityToString(priority),
+            'due_date': '${dueDate.year}-${dueDate.month.toString().padLeft(2, '0')}-${dueDate.day.toString().padLeft(2, '0')}',
+            'related_document': relatedDocument,
+          },
+        )
+        .timeout(const Duration(seconds: 20));
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode == 200) {
+      final payload = body['message'] as Map<String, dynamic>;
+      return payload['id'] as String;
+    }
+
+    throw _extractError(body, 'Failed to create task.');
+  }
+
+  static String _priorityToString(TaskPriority p) {
+    switch (p) {
+      case TaskPriority.urgent: return 'urgent';
+      case TaskPriority.high:   return 'high';
+      case TaskPriority.low:    return 'low';
+      case TaskPriority.medium: return 'medium';
+    }
+  }
+
   /// Updates the status of a task on the server (fire-and-forget safe).
   ///
   /// Throws a [String] error message on failure.

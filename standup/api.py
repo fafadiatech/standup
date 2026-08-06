@@ -1117,6 +1117,74 @@ def update_task_status() -> dict:
     return {"status": "success", "message": _("Task status updated.")}
 
 
+@frappe.whitelist(methods=["POST"])
+def create_task() -> dict:
+    """
+    Create a new ERPNext Task and assign it to the current user.
+
+    Request body (form-encoded):
+        title             – task subject (required)
+        description       – optional free-text description
+        priority          – low | medium | high | urgent  (default: medium)
+        due_date          – ISO date string, e.g. "2026-08-10" (required)
+        related_document  – ERPNext Project name to link, or blank / "General"
+
+    Response 200:
+        {
+          "status":  "success",
+          "id":      "TASK-2026-00005",
+          "message": "Task created successfully."
+        }
+
+    Raises frappe.ValidationError (HTTP 417) for missing required fields.
+    """
+    user = _require_auth()
+
+    data  = frappe.local.form_dict
+    title = (data.get("title") or "").strip()
+    if not title:
+        frappe.throw(_("title is required."), frappe.ValidationError)
+
+    due_date = (data.get("due_date") or "").strip()
+    if not due_date:
+        frappe.throw(_("due_date is required."), frappe.ValidationError)
+
+    _PRIORITY_MAP = {
+        "low":    "Low",
+        "medium": "Medium",
+        "high":   "High",
+        "urgent": "Urgent",
+    }
+    priority_raw = (data.get("priority") or "medium").strip().lower()
+    priority = _PRIORITY_MAP.get(priority_raw, "Medium")
+
+    description       = (data.get("description")       or "").strip() or None
+    related_document  = (data.get("related_document")  or "").strip()
+    # "General" is a UI placeholder; don't link it as a project name
+    project = related_document if related_document and related_document != "General" else None
+
+    task = frappe.get_doc({
+        "doctype":      "Task",
+        "subject":      title,
+        "description":  description,
+        "priority":     priority,
+        "status":       "Open",
+        "exp_end_date": due_date,
+        "project":      project,
+    })
+    task.insert(ignore_permissions=True)
+
+    # Assign the task to the current user so get_tasks() returns it.
+    task.db_set("_assign", json.dumps([user]), update_modified=False)
+    frappe.db.commit()
+
+    return {
+        "status":  "success",
+        "id":      task.name,
+        "message": _("Task created successfully."),
+    }
+
+
 @frappe.whitelist(methods=["GET"])
 def get_achievements() -> dict:
     """

@@ -59,6 +59,8 @@ class ApiConstants {
   // Task endpoints
   static const String getTasks =
       '/api/method/standup.api.get_tasks';
+  static const String createTask =
+      '/api/method/standup.api.create_task';
   static const String updateTaskStatus =
       '/api/method/standup.api.update_task_status';
 

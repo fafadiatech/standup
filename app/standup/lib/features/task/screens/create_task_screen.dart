@@ -3,11 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../data/models/task_model.dart';
-import '../../../data/models/checklist_item_model.dart';
-import '../../../data/models/attachment_model.dart';
-import '../../../data/models/comment_model.dart';
-import '../../../data/models/time_log_model.dart';
+import '../../../data/models/task_model.dart' show TaskPriority;
 import '../providers/task_provider.dart';
 
 class CreateTaskScreen extends ConsumerStatefulWidget {
@@ -25,6 +21,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
 
   TaskPriority _priority = TaskPriority.medium;
   DateTime _dueDate = DateTime.now().add(const Duration(days: 1));
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -50,30 +47,35 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     if (picked != null) setState(() => _dueDate = picked);
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_isSaving) return;
 
-    final task = TaskModel(
-      id: 'task-${DateTime.now().millisecondsSinceEpoch}',
-      title: _titleController.text.trim(),
-      description: _descriptionController.text.trim(),
-      priority: _priority,
-      status: TaskStatus.todo,
-      dueDate: _dueDate,
-      relatedDocument: _relatedDocController.text.trim().isNotEmpty
-          ? _relatedDocController.text.trim()
-          : 'General',
-      checklist: <ChecklistItem>[],
-      attachments: <AttachmentModel>[],
-      comments: <CommentModel>[],
-      timeLogs: <TimeLogModel>[],
-      hasPendingApproval: false,
-      hasActiveTimer: false,
-      isSynced: false,
-    );
+    setState(() => _isSaving = true);
 
-    ref.read(taskProvider.notifier).addTask(task);
-    context.pop();
+    try {
+      await ref.read(taskProvider.notifier).createTask(
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        priority: _priority,
+        dueDate: _dueDate,
+        relatedDocument: _relatedDocController.text.trim().isNotEmpty
+            ? _relatedDocController.text.trim()
+            : 'General',
+      );
+      if (mounted) context.pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -151,8 +153,14 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: _save,
-              child: const Text('Save Task'),
+              onPressed: _isSaving ? null : _save,
+              child: _isSaving
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Save Task'),
             ),
           ],
         ),

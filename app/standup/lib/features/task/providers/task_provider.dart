@@ -186,8 +186,54 @@ class TaskNotifier extends StateNotifier<TaskState> {
     _service.updateTaskStatus(taskId, status).catchError((_) {});
   }
 
-  void addTask(TaskModel task) {
-    state = state.copyWith(tasks: [...state.tasks, task]);
+  Future<void> createTask({
+    required String title,
+    required String description,
+    required TaskPriority priority,
+    required DateTime dueDate,
+    required String relatedDocument,
+  }) async {
+    // Optimistic insert with a temporary local ID
+    final tempId = 'task-${DateTime.now().millisecondsSinceEpoch}';
+    final tempTask = TaskModel(
+      id: tempId,
+      title: title,
+      description: description,
+      priority: priority,
+      status: TaskStatus.todo,
+      dueDate: dueDate,
+      relatedDocument: relatedDocument,
+      checklist: const [],
+      attachments: const [],
+      comments: const [],
+      timeLogs: const [],
+      hasPendingApproval: false,
+      hasActiveTimer: false,
+      isSynced: false,
+    );
+    state = state.copyWith(tasks: [...state.tasks, tempTask]);
+
+    try {
+      final serverId = await _service.createTask(
+        title: title,
+        description: description,
+        priority: priority,
+        dueDate: dueDate,
+        relatedDocument: relatedDocument,
+      );
+      // Replace temp task with server-confirmed entry
+      final updated = state.tasks.map((t) {
+        if (t.id != tempId) return t;
+        return t.copyWith(id: serverId, isSynced: true);
+      }).toList();
+      state = state.copyWith(tasks: updated);
+    } catch (e) {
+      // Roll back optimistic insert
+      state = state.copyWith(
+        tasks: state.tasks.where((t) => t.id != tempId).toList(),
+      );
+      rethrow;
+    }
   }
 
   void addComment(String taskId, CommentModel comment) {
