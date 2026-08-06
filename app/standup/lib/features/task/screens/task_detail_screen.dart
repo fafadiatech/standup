@@ -531,7 +531,7 @@ class _TimeLogsTab extends ConsumerWidget {
         LiveTimerWidget(taskId: task.id),
         const SizedBox(height: 12),
         OutlinedButton.icon(
-          onPressed: () => context.push('/task/${task.id}/log-time'),
+          onPressed: () => context.push('/task/detail/${task.id}/log-time'),
           icon: const Icon(Icons.add, size: 16),
           label: const Text('Log Time Manually'),
           style: AppButtonStyles.compactOutlined,

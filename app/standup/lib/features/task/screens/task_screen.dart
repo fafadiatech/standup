@@ -2,28 +2,46 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../data/models/task_model.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../providers/task_provider.dart';
+import '../providers/project_provider.dart';
 import '../widgets/task_filter_bar.dart';
 import '../widgets/task_section.dart';
 
 class TaskScreen extends ConsumerWidget {
-  const TaskScreen({super.key});
+  final String? projectId;
+
+  const TaskScreen({super.key, this.projectId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final taskState = ref.watch(taskProvider);
     final notifier = ref.read(taskProvider.notifier);
 
-    final overdue = notifier.overdueTasks;
-    final today = notifier.todayTasks;
-    final upcoming = notifier.upcomingTasks;
-    final completed = notifier.completedTasks;
+    // If a project is selected, filter all task groups to that project.
+    List<TaskModel> byProject(List<TaskModel> tasks) {
+      if (projectId == null) return tasks;
+      return tasks.where((t) => t.projectId == projectId).toList();
+    }
+
+    final overdue = byProject(notifier.overdueTasks);
+    final today = byProject(notifier.todayTasks);
+    final upcoming = byProject(notifier.upcomingTasks);
+    final completed = byProject(notifier.completedTasks);
 
     final hasAny = overdue.isNotEmpty ||
         today.isNotEmpty ||
         upcoming.isNotEmpty ||
         completed.isNotEmpty;
+
+    // Resolve project name for the AppBar title
+    String title = 'Tasks';
+    if (projectId != null) {
+      final project =
+          ref.read(projectProvider.notifier).getById(projectId!);
+      if (project != null) title = project.name;
+    }
 
     Widget body;
     if (taskState.isLoading) {
@@ -70,9 +88,17 @@ class TaskScreen extends ConsumerWidget {
           backgroundColor: AppColors.background,
           elevation: 0,
           scrolledUnderElevation: 0,
-          title: const Text(
-            'Tasks',
-            style: TextStyle(
+          // Show back button when viewing a specific project
+          leading: projectId != null
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back,
+                      color: AppColors.textPrimary),
+                  onPressed: () => context.pop(),
+                )
+              : null,
+          title: Text(
+            title,
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
@@ -84,13 +110,10 @@ class TaskScreen extends ConsumerWidget {
           children: [
             Column(
               children: [
-                // Search + filter chips
                 const TaskFilterBar(),
-                // Task list
                 Expanded(child: body),
               ],
             ),
-            // FAB positioned over list
             Positioned(
               bottom: 12,
               right: 16,

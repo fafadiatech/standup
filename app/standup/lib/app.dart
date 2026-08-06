@@ -6,6 +6,7 @@ import 'core/constants/app_strings.dart';
 import 'features/auth/providers/auth_provider.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/home/screens/home_screen.dart';
+import 'features/task/screens/project_list_screen.dart';
 import 'features/task/screens/task_screen.dart';
 import 'features/task/screens/task_detail_screen.dart';
 import 'features/task/screens/create_task_screen.dart';
@@ -69,21 +70,28 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppStrings.routeTask,
-        builder: (context, state) => const TaskScreen(),
+        builder: (context, state) => const ProjectListScreen(),
       ),
       GoRoute(
         path: '/task/create',
         builder: (context, state) => const CreateTaskScreen(),
       ),
       GoRoute(
-        path: '/task/:id',
+        path: '/task/project/:projectId',
+        builder: (context, state) {
+          final projectId = state.pathParameters['projectId']!;
+          return TaskScreen(projectId: projectId);
+        },
+      ),
+      GoRoute(
+        path: '/task/detail/:id',
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return TaskDetailScreen(taskId: id);
         },
       ),
       GoRoute(
-        path: '/task/:id/log-time',
+        path: '/task/detail/:id/log-time',
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return ManualTimeEntryScreen(taskId: id);

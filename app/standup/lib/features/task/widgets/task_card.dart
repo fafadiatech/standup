@@ -137,7 +137,7 @@ class TaskCard extends ConsumerWidget {
                   Expanded(
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => context.push('/task/${task.id}'),
+                      onTap: () => context.push('/task/detail/${task.id}'),
                       child: Text(
                         task.title,
                         style: const TextStyle(
@@ -158,7 +158,7 @@ class TaskCard extends ConsumerWidget {
               const SizedBox(height: 6),
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => context.push('/task/${task.id}'),
+                onTap: () => context.push('/task/detail/${task.id}'),
                 child: _TaskMetaBlock(task: task),
               ),
             ],
@@ -286,7 +286,7 @@ class _ActionButton extends ConsumerWidget {
           filled: false,
           onPressed: () {
             notifier.updateTaskStatus(task.id, TaskStatus.inProgress);
-            context.push('/task/${task.id}');
+            context.push('/task/detail/${task.id}');
           },
         );
       case TaskStatus.inProgress:
@@ -294,7 +294,7 @@ class _ActionButton extends ConsumerWidget {
           tooltip: 'Continue',
           icon: Icons.arrow_forward_rounded,
           filled: true,
-          onPressed: () => context.push('/task/${task.id}'),
+          onPressed: () => context.push('/task/detail/${task.id}'),
         );
       case TaskStatus.paused:
         return _TaskActionIcon(
@@ -303,7 +303,7 @@ class _ActionButton extends ConsumerWidget {
           filled: true,
           onPressed: () {
             notifier.updateTaskStatus(task.id, TaskStatus.inProgress);
-            context.push('/task/${task.id}');
+            context.push('/task/detail/${task.id}');
           },
         );
       case TaskStatus.completed:

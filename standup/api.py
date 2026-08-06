@@ -990,6 +990,94 @@ def complete_snack_request() -> dict:
 
 
 @frappe.whitelist(methods=["GET"])
+def get_projects() -> dict:
+    """
+    Return ERPNext Project records that have at least one Task assigned to the
+    current user, ordered by project name.
+
+    Uses ERPNext's built-in Project DocType. Task counts reflect only tasks
+    assigned to the requesting user, not the full project team.
+
+    Response 200:
+        {
+          "status": "success",
+          "projects": [
+            {
+              "id":                   "Mobile App Redesign",
+              "name":                 "Mobile App Redesign",
+              "description":          "...",
+              "status":               "active",
+              "task_count":           4,
+              "completed_task_count": 1,
+              "color_value":          4279247296
+            },
+            ...
+          ]
+        }
+    """
+    user = _require_auth()
+
+    # Palette of ARGB color ints (fully opaque). One is assigned per project
+    # based on a stable hash of the project name so the color never changes.
+    _PALETTE = [
+        0xFF1565C0,  # Blue
+        0xFFD32F2F,  # Red
+        0xFF2E7D32,  # Green
+        0xFF6A1B9A,  # Purple
+        0xFFE65100,  # Deep Orange
+        0xFF00838F,  # Teal
+    ]
+
+    def _color_for(project_name: str) -> int:
+        idx = sum(ord(c) for c in project_name) % len(_PALETTE)
+        return _PALETTE[idx]
+
+    _STATUS_MAP = {
+        "Open":      "active",
+        "Completed": "completed",
+        "Cancelled": "inactive",
+    }
+
+    # Single query: join Project ↔ Task, filter tasks by current user assignment,
+    # aggregate task counts per project.
+    rows = frappe.db.sql(
+        """
+        SELECT
+            p.name                                        AS id,
+            p.project_name                                AS name,
+            p.notes                                       AS description,
+            p.status                                      AS status,
+            COUNT(t.name)                                 AS task_count,
+            SUM(CASE WHEN t.status = 'Completed' THEN 1 ELSE 0 END)
+                                                          AS completed_task_count
+        FROM `tabProject` p
+        INNER JOIN `tabTask` t ON t.project = p.name
+        WHERE t._assign LIKE %(pattern)s
+          AND t.status NOT IN ('Cancelled', 'Template')
+        GROUP BY p.name
+        ORDER BY p.project_name ASC
+        """,
+        {"pattern": f"%{user}%"},
+        as_dict=True,
+    )
+
+    projects = [
+        {
+            "id":                   r.id,
+            "name":                 r.name or "",
+            "description":          r.description or "",
+            "status":               _STATUS_MAP.get(r.status, "active"),
+            "task_count":           int(r.task_count or 0),
+            "completed_task_count": int(r.completed_task_count or 0),
+            "color_value":          _color_for(r.name or ""),
+        }
+        for r in rows
+    ]
+
+    return {"status": "success", "projects": projects}
+
+
+@frappe.whitelist(methods=["GET"])
 def get_tasks() -> dict:
     """
     Return ERPNext Task records assigned to the current user, ordered by due date.
@@ -1057,6 +1145,7 @@ def get_tasks() -> dict:
             "priority":             _PRIORITY_MAP.get(r.priority, "medium"),
             "due_date":             str(r.exp_end_date),
             "related_document":     r.project or "",
+            "project_id":           r.project or None,
             "has_pending_approval": False,
             "checklist":            [],
         })

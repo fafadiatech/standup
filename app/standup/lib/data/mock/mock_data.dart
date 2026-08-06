@@ -13,6 +13,7 @@ import '../models/leaderboard_model.dart';
 import '../models/notification_model.dart';
 import '../models/pantry_catalog_item.dart';
 import '../models/snack_request_model.dart';
+import '../models/project_model.dart';
 import 'package:flutter/material.dart';
 
 class MockData {
@@ -412,6 +413,37 @@ class MockData {
     ),
   ];
 
+  // --- Projects ---
+  static const List<ProjectModel> projects = [
+    ProjectModel(
+      id: 'proj-1',
+      name: 'Mobile App Redesign',
+      description: 'Full redesign of the employee-facing mobile app including new onboarding, task management, and profile screens.',
+      status: ProjectStatus.active,
+      taskCount: 2,
+      completedTaskCount: 0,
+      colorValue: 0xFF1565C0,
+    ),
+    ProjectModel(
+      id: 'proj-2',
+      name: 'Payroll & Finance',
+      description: 'Ongoing payroll processing, invoice management, and finance portal maintenance.',
+      status: ProjectStatus.active,
+      taskCount: 2,
+      completedTaskCount: 0,
+      colorValue: 0xFFD32F2F,
+    ),
+    ProjectModel(
+      id: 'proj-3',
+      name: 'Analytics Platform',
+      description: 'Migration and enhancement of legacy management reports to the new cloud-based analytics dashboard.',
+      status: ProjectStatus.active,
+      taskCount: 2,
+      completedTaskCount: 1,
+      colorValue: 0xFF2E7D32,
+    ),
+  ];
+
   // --- Tasks ---
   static final List<TaskModel> tasks = [
     // 1. Overdue – yesterday, high priority, 2 checklist, 1 attachment, 2 comments, 1 time log
@@ -464,6 +496,7 @@ class MockData {
       hasPendingApproval: false,
       hasActiveTimer: false,
       isSynced: true,
+      projectId: 'proj-2',
     ),
     // 2. Overdue – 3 days ago, urgent priority
     TaskModel(
@@ -482,6 +515,7 @@ class MockData {
       hasPendingApproval: false,
       hasActiveTimer: false,
       isSynced: false,
+      projectId: 'proj-2',
     ),
     // 3. Today – inProgress, medium, hasActiveTimer, 3 checklist items
     TaskModel(
@@ -504,6 +538,7 @@ class MockData {
       hasPendingApproval: false,
       hasActiveTimer: true,
       isSynced: true,
+      projectId: 'proj-1',
     ),
     // 4. Today – todo, high, hasPendingApproval
     TaskModel(
@@ -535,6 +570,7 @@ class MockData {
       hasPendingApproval: true,
       hasActiveTimer: false,
       isSynced: false,
+      projectId: 'proj-1',
     ),
     // 5. Upcoming – +3 days, todo, low
     TaskModel(
@@ -553,6 +589,7 @@ class MockData {
       hasPendingApproval: false,
       hasActiveTimer: false,
       isSynced: true,
+      projectId: 'proj-3',
     ),
     // 6. Completed – medium, 1 time log
     TaskModel(
@@ -598,6 +635,7 @@ class MockData {
       hasPendingApproval: false,
       hasActiveTimer: false,
       isSynced: true,
+      projectId: 'proj-3',
     ),
   ];
 }

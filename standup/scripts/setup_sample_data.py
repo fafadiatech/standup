@@ -218,110 +218,132 @@ _ACHIEVEMENTS = [
     ),
 ]
 
+# Uses ERPNext's built-in Project DocType.
+# (project_name, description, status, priority, expected_start_date, expected_end_date)
+_PROJECTS = [
+    (
+        "Mobile App Redesign",
+        "Full redesign of the employee-facing mobile app including new onboarding, "
+        "task management, and profile screens.",
+        "Open", "High", "2026-07-01", "2026-10-31",
+    ),
+    (
+        "Payroll & Finance",
+        "Ongoing payroll processing, invoice management, and finance portal maintenance.",
+        "Open", "Medium", "2026-01-01", "2026-12-31",
+    ),
+    (
+        "Analytics Platform",
+        "Migration and enhancement of legacy management reports to the new "
+        "cloud-based analytics dashboard.",
+        "Open", "Medium", "2026-06-01", "2026-09-30",
+    ),
+]
+
 # Uses ERPNext's built-in Task DocType.
 # Status values must match ERPNext Task options:
 #   Open | Working | Pending Review | Overdue | Completed
-# (email, subject, description, erpnext_status, priority, exp_end_date)
+# (email, subject, description, erpnext_status, priority, exp_end_date, project_name)
 _TASKS = [
     # Alice — Engineering / Software Engineer
     (
         "alice.johnson@example.com",
         "Implement user authentication module",
         "Build JWT-based auth with refresh token support for the mobile API.",
-        "Working", "High", "2026-08-07",
+        "Working", "High", "2026-08-07", "Mobile App Redesign",
     ),
     (
         "alice.johnson@example.com",
         "Write unit tests for API endpoints",
         "Achieve ≥80% coverage across all standup.api methods.",
-        "Open", "Medium", "2026-08-12",
+        "Open", "Medium", "2026-08-12", "Mobile App Redesign",
     ),
     (
         "alice.johnson@example.com",
         "Fix login page validation bug",
         "Empty password field submits the form without showing an error.",
-        "Overdue", "Urgent", "2026-07-30",
+        "Overdue", "Urgent", "2026-07-30", "Mobile App Redesign",
     ),
     (
         "alice.johnson@example.com",
         "Code review for mobile PR",
         "Review and approve the pantry feature pull request.",
-        "Completed", "Low", "2026-08-01",
+        "Completed", "Low", "2026-08-01", "Mobile App Redesign",
     ),
     # Bob — Engineering / Software Engineer
     (
         "bob.smith@example.com",
         "Set up CI/CD pipeline",
         "Configure GitHub Actions for build, test, and deploy stages.",
-        "Pending Review", "High", "2026-08-10",
+        "Pending Review", "High", "2026-08-10", "Analytics Platform",
     ),
     (
         "bob.smith@example.com",
         "Migrate database schema",
         "Apply new ERPNext custom fields and re-seed sample data.",
-        "Working", "Urgent", "2026-08-06",
+        "Working", "Urgent", "2026-08-06", "Analytics Platform",
     ),
     (
         "bob.smith@example.com",
         "Update API documentation",
         "Document all new mobile endpoints in Postman and README.",
-        "Open", "Low", "2026-08-15",
+        "Open", "Low", "2026-08-15", "Analytics Platform",
     ),
     (
         "bob.smith@example.com",
         "Fix memory leak in worker service",
         "Background task worker accumulates file handles over long runs.",
-        "Overdue", "High", "2026-07-28",
+        "Overdue", "High", "2026-07-28", "Analytics Platform",
     ),
     # Carol — Human Resources / HR Manager
     (
         "carol.davis@example.com",
         "Prepare onboarding materials",
         "Update welcome deck and checklist for new engineering hires.",
-        "Open", "Medium", "2026-08-08",
+        "Open", "Medium", "2026-08-08", "Mobile App Redesign",
     ),
     (
         "carol.davis@example.com",
         "Conduct performance reviews",
         "Complete Q2 performance review cycle for the Engineering team.",
-        "Working", "High", "2026-08-14",
+        "Working", "High", "2026-08-14", "Payroll & Finance",
     ),
     (
         "carol.davis@example.com",
         "Update leave policy document",
         "Incorporate the new privilege leave carry-forward rules.",
-        "Completed", "Medium", "2026-07-25",
+        "Completed", "Medium", "2026-07-25", "Payroll & Finance",
     ),
     (
         "carol.davis@example.com",
         "Schedule team building event",
         "Organise the Q3 team outing logistics and RSVP collection.",
-        "Pending Review", "Low", "2026-08-20",
+        "Pending Review", "Low", "2026-08-20", None,
     ),
     # David — Product / Product Manager
     (
         "david.lee@example.com",
         "Define Q3 product roadmap",
         "Prioritise features for Q3 based on user feedback and OKRs.",
-        "Working", "Urgent", "2026-08-07",
+        "Working", "Urgent", "2026-08-07", "Mobile App Redesign",
     ),
     (
         "david.lee@example.com",
         "User research interview setup",
         "Schedule and script five user interviews for the leave module.",
-        "Open", "Medium", "2026-08-11",
+        "Open", "Medium", "2026-08-11", "Mobile App Redesign",
     ),
     (
         "david.lee@example.com",
         "Competitive analysis report",
         "Benchmark standup app features against three competitor apps.",
-        "Overdue", "High", "2026-07-31",
+        "Overdue", "High", "2026-07-31", "Analytics Platform",
     ),
     (
         "david.lee@example.com",
         "Sprint retrospective planning",
         "Prepare retro board and agenda for the end-of-sprint meeting.",
-        "Open", "Low", "2026-08-18",
+        "Open", "Low", "2026-08-18", None,
     ),
 ]
 
@@ -886,10 +908,38 @@ def _setup_achievements() -> None:
         _tag(f"Achievement '{badge_title}' for {emp_id} ({achieved_date})", "created")
 
 
+def _get_project_name(project_name: str) -> str | None:
+    """Return the ERPNext doc name (e.g. PROJ-0001) for a given project_name."""
+    return frappe.db.get_value("Project", {"project_name": project_name}, "name")
+
+
+def _setup_projects(company: str) -> None:
+    for project_name, description, status, priority, start_date, end_date in _PROJECTS:
+        # ERPNext v15 uses numeric autonames (PROJ-0001), so guard by project_name
+        # field — not by doc name — to stay idempotent across reruns.
+        if _get_project_name(project_name):
+            _tag(f"Project '{project_name}'", "skip")
+            continue
+
+        frappe.get_doc({
+            "doctype":               "Project",
+            "project_name":          project_name,
+            "description":           description,
+            "status":                status,
+            "priority":              priority,
+            "expected_start_date":   start_date,
+            "expected_end_date":     end_date,
+            "company":               company,
+            "is_active":             "Yes",
+        }).insert(ignore_permissions=True)
+        frappe.db.commit()
+        _tag(f"Project '{project_name}' [{status}]", "created")
+
+
 def _setup_tasks() -> None:
     from frappe.desk.form.assign_to import add as frappe_assign
 
-    for email, subject, description, erpnext_status, priority, exp_end_date in _TASKS:
+    for email, subject, description, erpnext_status, priority, exp_end_date, project_name in _TASKS:
         # Guard: skip if a Task with this subject is already assigned to this user
         existing = frappe.db.sql(
             """
@@ -905,16 +955,33 @@ def _setup_tasks() -> None:
             _tag(f"Task '{subject}' for {email}", "skip")
             continue
 
+        # Insert WITHOUT the project field to avoid ERPNext's Task.on_update()
+        # calling frappe.get_cached_doc("Project", …) before the Project is
+        # visible through Frappe's document cache in the same execution context.
+        # We wire the project link via db_set() below, which bypasses on_update.
         doc = frappe.get_doc({
-            "doctype":     "Task",
-            "subject":     subject,
-            "description": description,
-            "status":      erpnext_status,
-            "priority":    priority,
+            "doctype":      "Task",
+            "subject":      subject,
+            "description":  description,
+            "status":       erpnext_status,
+            "priority":     priority,
             "exp_end_date": exp_end_date,
         })
         doc.insert(ignore_permissions=True)
         frappe.db.commit()
+
+        # Wire the project link directly — skips on_update so no cache look-up.
+        # Must use the doc name (PROJ-0001 style), not the human project_name,
+        # because ERPNext v15 uses numeric autonames for the Project DocType.
+        if project_name:
+            project_doc_name = _get_project_name(project_name)
+            if project_doc_name:
+                frappe.db.set_value(
+                    "Task", doc.name, "project", project_doc_name, update_modified=False
+                )
+                frappe.db.commit()
+            else:
+                _tag(f"Task '{subject}': project '{project_name}' not found — link skipped", "warn")
 
         # Assign to the user via Frappe's native mechanism so _assign is populated
         # and get_tasks() LIKE filter works correctly.
@@ -934,7 +1001,8 @@ def _setup_tasks() -> None:
             frappe.db.commit()
             _tag(f"Task '{subject}' assign fallback ({e})", "warn")
 
-        _tag(f"Task '{subject}' [{erpnext_status}] → {email}", "created")
+        project_label = f" [{project_name}]" if project_name else ""
+        _tag(f"Task '{subject}' [{erpnext_status}]{project_label} → {email}", "created")
 
 
 def _setup_upcoming_events() -> None:
@@ -993,6 +1061,7 @@ def run() -> None:
     _setup_energy_points()
     _setup_employee_of_month()
 
+    _setup_projects(company)
     _setup_tasks()
 
     _setup_weekly_meetings()

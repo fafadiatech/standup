@@ -22,6 +22,7 @@ class TaskModel {
   final bool hasPendingApproval;
   final bool hasActiveTimer;
   final bool isSynced;
+  final String? projectId;
 
   const TaskModel({
     required this.id,
@@ -38,6 +39,7 @@ class TaskModel {
     required this.hasPendingApproval,
     required this.hasActiveTimer,
     required this.isSynced,
+    this.projectId,
   });
 
   factory TaskModel.fromJson(Map<String, dynamic> json) {
@@ -58,6 +60,7 @@ class TaskModel {
       hasPendingApproval: (json['has_pending_approval'] as bool?) ?? false,
       hasActiveTimer: false,
       isSynced: true,
+      projectId: json['project_id'] as String?,
     );
   }
 
@@ -95,6 +98,7 @@ class TaskModel {
     bool? hasPendingApproval,
     bool? hasActiveTimer,
     bool? isSynced,
+    String? projectId,
   }) {
     return TaskModel(
       id: id ?? this.id,
@@ -111,6 +115,7 @@ class TaskModel {
       hasPendingApproval: hasPendingApproval ?? this.hasPendingApproval,
       hasActiveTimer: hasActiveTimer ?? this.hasActiveTimer,
       isSynced: isSynced ?? this.isSynced,
+      projectId: projectId ?? this.projectId,
     );
   }
 }
