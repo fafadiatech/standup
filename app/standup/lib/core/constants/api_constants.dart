@@ -63,6 +63,10 @@ class ApiConstants {
       '/api/method/standup.api.create_task';
   static const String updateTaskStatus =
       '/api/method/standup.api.update_task_status';
+  static const String logTime =
+      '/api/method/standup.api.log_time';
+  static const String getActivityTypes =
+      '/api/method/standup.api.get_activity_types';
 
   // Achievement endpoints
   static const String getAchievements =

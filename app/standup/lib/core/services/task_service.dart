@@ -122,6 +122,89 @@ class TaskService {
     }
   }
 
+  /// Returns all Activity Type names from ERPNext, sorted alphabetically.
+  ///
+  /// Throws a [String] error message on failure.
+  Future<List<String>> getActivityTypes() async {
+    final authHeader = await _authService.authHeader();
+    if (authHeader == null) throw 'Not authenticated.';
+
+    final uri = Uri.parse(
+      '${ApiConstants.baseUrl}${ApiConstants.getActivityTypes}',
+    );
+
+    final response = await http
+        .get(uri, headers: {
+          'Host': ApiConstants.frappeSiteName,
+          'Authorization': authHeader,
+        })
+        .timeout(const Duration(seconds: 15));
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode == 200) {
+      final payload = body['message'] as Map<String, dynamic>;
+      return (payload['activity_types'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList();
+    }
+
+    throw _extractError(body, 'Failed to load activity types.');
+  }
+
+  /// Logs time for a task by creating or appending to an ERPNext Timesheet.
+  ///
+  /// Both timer-based and manual entries use this method.
+  /// Returns the server-assigned Timesheet ID on success.
+  /// Throws a [String] error message on failure.
+  Future<String> logTime({
+    required String taskId,
+    required DateTime fromTime,
+    required DateTime toTime,
+    required double hours,
+    String? activityType,
+    String? notes,
+  }) async {
+    final authHeader = await _authService.authHeader();
+    if (authHeader == null) throw 'Not authenticated.';
+
+    final uri = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.logTime}');
+
+    String fmtDateTime(DateTime dt) =>
+        '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} '
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}';
+
+    final body = <String, String>{
+      'task_id': taskId,
+      'from_time': fmtDateTime(fromTime),
+      'to_time': fmtDateTime(toTime),
+      'hours': hours.toStringAsFixed(2),
+      if (activityType != null && activityType.isNotEmpty) 'activity_type': activityType,
+      if (notes != null && notes.isNotEmpty) 'description': notes,
+    };
+
+    final response = await http
+        .post(
+          uri,
+          headers: {
+            'Host': ApiConstants.frappeSiteName,
+            'Authorization': authHeader,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: body,
+        )
+        .timeout(const Duration(seconds: 20));
+
+    final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode == 200) {
+      final payload = responseBody['message'] as Map<String, dynamic>;
+      return payload['id'] as String;
+    }
+
+    throw _extractError(responseBody, 'Failed to log time.');
+  }
+
   static String _statusToString(TaskStatus s) {
     switch (s) {
       case TaskStatus.inProgress: return 'in_progress';

@@ -4,6 +4,7 @@ class TimeLogModel {
   final DateTime startTime;
   final DateTime endTime;
   final double hours;
+  final String? activityType;
   final String? notes;
   final bool synced;
 
@@ -13,7 +14,24 @@ class TimeLogModel {
     required this.startTime,
     required this.endTime,
     required this.hours,
+    this.activityType,
     this.notes,
     required this.synced,
   });
+
+  TimeLogModel copyWith({
+    String? id,
+    bool? synced,
+  }) {
+    return TimeLogModel(
+      id: id ?? this.id,
+      date: date,
+      startTime: startTime,
+      endTime: endTime,
+      hours: hours,
+      activityType: activityType,
+      notes: notes,
+      synced: synced ?? this.synced,
+    );
+  }
 }

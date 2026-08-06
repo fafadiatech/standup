@@ -6,6 +6,7 @@ class TimerState {
   final String? activeTaskId;
   final Duration elapsed;
   final bool isRunning;
+  final String? activityType;
   final String? notes;
   final DateTime? startedAt;
 
@@ -13,6 +14,7 @@ class TimerState {
     this.activeTaskId,
     required this.elapsed,
     required this.isRunning,
+    this.activityType,
     this.notes,
     this.startedAt,
   });
@@ -21,6 +23,7 @@ class TimerState {
     Object? activeTaskId = _sentinel,
     Duration? elapsed,
     bool? isRunning,
+    Object? activityType = _sentinel,
     Object? notes = _sentinel,
     Object? startedAt = _sentinel,
   }) {
@@ -29,6 +32,8 @@ class TimerState {
           activeTaskId == _sentinel ? this.activeTaskId : activeTaskId as String?,
       elapsed: elapsed ?? this.elapsed,
       isRunning: isRunning ?? this.isRunning,
+      activityType:
+          activityType == _sentinel ? this.activityType : activityType as String?,
       notes: notes == _sentinel ? this.notes : notes as String?,
       startedAt:
           startedAt == _sentinel ? this.startedAt : startedAt as DateTime?,
@@ -47,7 +52,7 @@ class TimerNotifier extends StateNotifier<TimerState> {
           isRunning: false,
         ));
 
-  void startTimer(String taskId) {
+  void startTimer(String taskId, {String? activityType}) {
     // Stop existing timer if running on a different task
     if (state.isRunning && state.activeTaskId != taskId) {
       _stopTicker();
@@ -58,6 +63,7 @@ class TimerNotifier extends StateNotifier<TimerState> {
       activeTaskId: taskId,
       elapsed: Duration.zero,
       isRunning: true,
+      activityType: activityType,
       startedAt: now,
     );
     _startTicker();
@@ -91,6 +97,7 @@ class TimerNotifier extends StateNotifier<TimerState> {
       startTime: startTime,
       endTime: endTime,
       hours: double.parse(hours.toStringAsFixed(2)),
+      activityType: state.activityType,
       notes: state.notes,
       synced: false,
     );

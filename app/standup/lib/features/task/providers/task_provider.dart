@@ -168,11 +168,38 @@ class TaskNotifier extends StateNotifier<TaskState> {
   }
 
   void addTimeLog(String taskId, TimeLogModel log) {
+    // Ignore sub-second timer stops — hours would be 0 and the API rejects them.
+    if (log.hours <= 0) return;
+
+    // Optimistic insert — UI is updated immediately
     final tasks = state.tasks.map((task) {
       if (task.id != taskId) return task;
       return task.copyWith(timeLogs: [...task.timeLogs, log]);
     }).toList();
     state = state.copyWith(tasks: tasks);
+
+    // Persist to server (Timesheet) — update sync flag on success, silent on failure
+    _service
+        .logTime(
+          taskId: taskId,
+          fromTime: log.startTime,
+          toTime: log.endTime,
+          hours: log.hours,
+          activityType: log.activityType,
+          notes: log.notes,
+        )
+        .then((timesheetId) {
+          final synced = state.tasks.map((task) {
+            if (task.id != taskId) return task;
+            final logs = task.timeLogs.map((l) {
+              if (l.id != log.id) return l;
+              return l.copyWith(id: timesheetId, synced: true);
+            }).toList();
+            return task.copyWith(timeLogs: logs);
+          }).toList();
+          state = state.copyWith(tasks: synced);
+        })
+        .catchError((_) {});
   }
 
   void updateTaskStatus(String taskId, TaskStatus status) {
@@ -270,4 +297,10 @@ final _taskServiceProvider = Provider<TaskService>(
 
 final taskProvider = StateNotifierProvider<TaskNotifier, TaskState>((ref) {
   return TaskNotifier(ref.read(_taskServiceProvider));
+});
+
+/// Fetches all Activity Type names from ERPNext.
+/// Cached for the lifetime of the provider (re-fetched on app restart).
+final activityTypesProvider = FutureProvider<List<String>>((ref) {
+  return ref.read(_taskServiceProvider).getActivityTypes();
 });

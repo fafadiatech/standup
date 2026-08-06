@@ -22,6 +22,7 @@ class _ManualTimeEntryScreenState extends ConsumerState<ManualTimeEntryScreen> {
   DateTime _date = DateTime.now();
   TimeOfDay _startTime = const TimeOfDay(hour: 9, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 10, minute: 0);
+  String? _selectedActivityType;
 
   @override
   void dispose() {
@@ -101,6 +102,7 @@ class _ManualTimeEntryScreenState extends ConsumerState<ManualTimeEntryScreen> {
       startTime: startDt,
       endTime: endDt,
       hours: double.parse(_computedHours.toStringAsFixed(2)),
+      activityType: _selectedActivityType,
       notes: _notesController.text.trim().isNotEmpty
           ? _notesController.text.trim()
           : null,
@@ -139,6 +141,48 @@ class _ManualTimeEntryScreenState extends ConsumerState<ManualTimeEntryScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          const _SectionLabel(label: 'Activity Type'),
+          Consumer(
+            builder: (context, ref, _) {
+              final activityTypesAsync = ref.watch(activityTypesProvider);
+              return activityTypesAsync.when(
+                loading: () => const SizedBox(
+                  height: 44,
+                  child: Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
+                error: (_, _) => const SizedBox.shrink(),
+                data: (types) {
+                  if (types.isEmpty) return const SizedBox.shrink();
+                  if (_selectedActivityType == null ||
+                      !types.contains(_selectedActivityType)) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        setState(() => _selectedActivityType = types.first);
+                      }
+                    });
+                  }
+                  return DropdownButtonFormField<String>(
+                    initialValue: _selectedActivityType ?? types.first,
+                    decoration: _inputDecoration('Select activity type'),
+                    items: types
+                        .map((t) => DropdownMenuItem(
+                              value: t,
+                              child: Text(t),
+                            ))
+                        .toList(),
+                    onChanged: (v) => setState(() => _selectedActivityType = v),
+                  );
+                },
+              );
+            },
+          ),
+          const SizedBox(height: 16),
           const _SectionLabel(label: 'Date'),
           _PickerTile(
             icon: Icons.calendar_today_outlined,

@@ -1186,6 +1186,184 @@ def create_task() -> dict:
 
 
 @frappe.whitelist(methods=["GET"])
+def get_activity_types() -> dict:
+    """
+    Return all Activity Type names, sorted alphabetically.
+
+    Used by the mobile app to populate the activity type dropdown before
+    the user starts a timer or saves a manual time log.
+
+    Response 200:
+        {
+          "status":         "success",
+          "activity_types": ["Design", "Development", "Documentation", ...]
+        }
+    """
+    _require_auth()
+
+    rows = frappe.get_all("Activity Type", fields=["name"], order_by="name asc")
+    return {
+        "status":         "success",
+        "activity_types": [r["name"] for r in rows],
+    }
+
+
+@frappe.whitelist(methods=["POST"])
+def log_time() -> dict:
+    """
+    Log time against an ERPNext Task.
+
+    Deduplication rule: if a Draft Timesheet already exists for this
+    employee on the same calendar date (start_date = from_date), the new
+    detail row is appended to that Timesheet instead of creating a new one.
+    This keeps one Timesheet per employee per day regardless of how many
+    individual sessions are logged.
+
+    Works for both timer-based logs and manual time entries.
+
+    Request body (form-encoded):
+        task_id       – ERPNext Task name, e.g. "TASK-2026-00001" (required)
+        from_time     – datetime string "YYYY-MM-DD HH:MM:SS" (required)
+        to_time       – datetime string "YYYY-MM-DD HH:MM:SS" (required)
+        hours         – decimal hours as string, e.g. "1.5" (required)
+        activity_type – Activity Type name (optional; falls back to first type)
+        description   – optional notes about the work session
+
+    Response 200:
+        {
+          "status":  "success",
+          "id":      "TS-2026-00001",
+          "message": "Time logged successfully."
+        }
+
+    Raises frappe.ValidationError  (HTTP 417) for missing / invalid params.
+    Raises frappe.DoesNotExistError (HTTP 404) if the task is not found.
+    """
+    user     = _require_auth()
+    employee = _get_employee(user)
+
+    data          = frappe.local.form_dict
+    task_id       = (data.get("task_id")       or "").strip()
+    from_time     = (data.get("from_time")     or "").strip()
+    to_time       = (data.get("to_time")       or "").strip()
+    hours_str     = (data.get("hours")         or "").strip()
+    activity_type = (data.get("activity_type") or "").strip() or None
+    description   = (data.get("description")   or "").strip() or None
+
+    if not task_id:
+        frappe.throw(_("task_id is required."), frappe.ValidationError)
+    if not from_time or not to_time:
+        frappe.throw(_("from_time and to_time are required."), frappe.ValidationError)
+    if not hours_str:
+        frappe.throw(_("hours is required."), frappe.ValidationError)
+
+    try:
+        hours = float(hours_str)
+    except ValueError:
+        frappe.throw(_("hours must be a valid number."), frappe.ValidationError)
+
+    if hours <= 0:
+        frappe.throw(_("hours must be greater than zero."), frappe.ValidationError)
+
+    if not frappe.db.exists("Task", task_id):
+        frappe.throw(
+            _("Task '{0}' not found.").format(task_id),
+            frappe.DoesNotExistError,
+        )
+
+    # Fall back to the first configured Activity Type when none is supplied.
+    if not activity_type:
+        fallback = frappe.get_all("Activity Type", fields=["name"], limit=1)
+        activity_type = fallback[0]["name"] if fallback else None
+
+    # Fetch employee meta required by Timesheet validation.
+    emp_doc       = frappe.get_doc("Employee", employee)
+    employee_name = emp_doc.employee_name or ""
+    company       = emp_doc.company
+
+    if not company:
+        frappe.throw(
+            _("Employee '{0}' has no company set.").format(employee),
+            frappe.ValidationError,
+        )
+
+    # Carry the task's linked project through to the detail row.
+    task_project = frappe.db.get_value("Task", task_id, "project")
+
+    from_date = getdate(from_time.split(" ")[0])
+    to_date   = getdate(to_time.split(" ")[0])
+
+    new_detail = {
+        "activity_type": activity_type,
+        "project":       task_project,
+        "task":          task_id,
+        "from_time":     from_time,
+        "to_time":       to_time,
+        "hours":         hours,
+        "description":   description,
+        "is_billable":   0,
+    }
+
+    # ── Deduplication: reuse the existing Draft Timesheet for this date ───────
+    existing = frappe.get_all(
+        "Timesheet",
+        filters={
+            "employee":   employee,
+            "start_date": from_date,
+            "docstatus":  0,          # Draft only — do not touch Submitted sheets
+        },
+        fields=["name", "end_date"],
+        order_by="creation asc",
+        limit=1,
+    )
+
+    try:
+        if existing:
+            timesheet = frappe.get_doc("Timesheet", existing[0]["name"])
+            timesheet.append("time_logs", new_detail)
+            # Extend end_date if the new log runs past the current sheet boundary.
+            if to_date > getdate(str(timesheet.end_date)):
+                timesheet.end_date = to_date
+            timesheet.save(ignore_permissions=True)
+        else:
+            timesheet = frappe.get_doc({
+                "doctype":       "Timesheet",
+                "employee":      employee,
+                "employee_name": employee_name,
+                "company":       company,
+                "start_date":    from_date,
+                "end_date":      to_date,
+                "time_logs":     [new_detail],
+            })
+            timesheet.insert(ignore_permissions=True)
+    except Exception as e:
+        # OverlapError (a ValidationError subclass) means the submitted time
+        # window collides with an existing entry for this employee.
+        # Replace ERPNext's internal "Row N: … TS-XXXX overlapping …" message
+        # with something the mobile user can act on.
+        err = str(e)
+        if "overlapping" in err.lower():
+            # Clear Frappe's internal message log so the raw ERPNext message
+            # ("Row 1: From Time and To Time of TS-XXXX is overlapping …")
+            # is not forwarded to the client alongside our friendly message.
+            frappe.local.message_log = []
+            frappe.throw(
+                _("This time range overlaps with an existing log for the same day. "
+                  "Please adjust the start or end time."),
+                frappe.ValidationError,
+            )
+        raise
+
+    frappe.db.commit()
+
+    return {
+        "status":  "success",
+        "id":      timesheet.name,
+        "message": _("Time logged successfully."),
+    }
+
+
+@frappe.whitelist(methods=["GET"])
 def get_achievements() -> dict:
     """
     Return active Achievement records ordered by achieved_date descending.
