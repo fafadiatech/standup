@@ -1,5 +1,9 @@
 # Standup — Your Company in Your Pocket
 
+<p align="center">
+  <img src="logo.png" alt="StandUp Logo" width="320"/>
+</p>
+
 Standup is a mobile-first employee experience app that keeps everyone connected, informed, and engaged — from knowing who's on leave today to ordering a coffee from the pantry without leaving your desk.
 
 Built on [Frappe/ERPNext](https://frappeframework.com/) with a Flutter mobile client, Standup surfaces the information employees actually need, without the noise of a full ERP dashboard.
