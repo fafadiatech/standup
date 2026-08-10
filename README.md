@@ -22,6 +22,20 @@ A personalised daily briefing at a glance:
 - **Work anniversaries** — celebrate tenure milestones
 - **Next public holiday** — so you can plan your long weekend
 
+### Tasks
+Your assigned work, organised by project:
+- Browse overdue, today, upcoming, and completed tasks
+- Search and filter by Today, High/Urgent, In Progress, or Completed
+- Create a task with priority, due date, and an optional related document
+- Start, pause, resume, and complete work from the list or detail screen
+
+### Time Logging
+Track time against any task:
+- Start a **live timer**, pause or resume, then stop to save the session
+- Choose an **activity type** — Communication, Execution, Planning, and more
+- **Log time manually** — date, start/end, optional notes; hours are computed automatically
+- Entries sync to your ERPNext Timesheet
+
 ### Leave Management
 - Check your remaining leave balance across Casual, Sick, and Privilege leave
 - Apply for leave directly from the app
@@ -48,25 +62,43 @@ A personalised daily briefing at a glance:
   <tr>
     <td align="center"><b>Home</b></td>
     <td align="center"><b>Home (cont.)</b></td>
-    <td align="center"><b>Tasks</b></td>
     <td align="center"><b>Holidays</b></td>
+    <td align="center"><b>Tasks</b></td>
   </tr>
   <tr>
     <td><img src="app/standup/screenshots/01.png" width="180"/></td>
     <td><img src="app/standup/screenshots/02.png" width="180"/></td>
-    <td><img src="app/standup/screenshots/04.png" width="180"/></td>
     <td><img src="app/standup/screenshots/03.png" width="180"/></td>
+    <td><img src="app/standup/screenshots/04.png" width="180"/></td>
   </tr>
   <tr>
+    <td align="center"><b>Task Overview</b></td>
+    <td align="center"><b>Time Logs</b></td>
+    <td align="center"><b>Activity Type</b></td>
+    <td align="center"><b>Time Tracker</b></td>
+  </tr>
+  <tr>
+    <td><img src="app/standup/screenshots/04.1.png" width="180"/></td>
+    <td><img src="app/standup/screenshots/04.2.png" width="180"/></td>
+    <td><img src="app/standup/screenshots/04.3.png" width="180"/></td>
+    <td><img src="app/standup/screenshots/04.4.png" width="180"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Log Time</b></td>
     <td align="center"><b>Leave</b></td>
     <td align="center"><b>Apply for Leave</b></td>
     <td align="center"><b>Pantry</b></td>
-    <td align="center"><b>Leaderboard</b></td>
   </tr>
   <tr>
+    <td><img src="app/standup/screenshots/04.5.png" width="180"/></td>
     <td><img src="app/standup/screenshots/05.png" width="180"/></td>
     <td><img src="app/standup/screenshots/06.png" width="180"/></td>
     <td><img src="app/standup/screenshots/07.png" width="180"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Leaderboard</b></td>
+  </tr>
+  <tr>
     <td><img src="app/standup/screenshots/08.png" width="180"/></td>
   </tr>
 </table>
@@ -77,7 +109,7 @@ A personalised daily briefing at a glance:
 
 | Role | What they get |
 |---|---|
-| **Employee** | Leave balance, leave applications, pantry orders, home feed |
+| **Employee** | Tasks, time logs, leave balance, pantry orders, home feed |
 | **Leave Approver** | Review and act on team leave requests |
 | **HR Manager** | Full access to leave, employee data, and announcements |
 | **Pantry Staff** | Dedicated queue to manage and fulfil snack requests |
